@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Help</title>
+    <style>
+    </style>
+</head>
+
+<body>
+<h1>Calibre PocketBook Tools helpfile</h1>
+<p>Basic plugin offering several tools for (recent) Pocketbook readers.</p>
+<p>When Calibre recognises an USB connected PocketBook reader, the menu options should become available.</p>
+
+<h2>Requirements</h2>
+<p>Plugin was tested with the 'PocketBook Lux 2' driver with Calibre versions 3.48-5.x, under Linux and Windows 10. It should support most recent HD, Lux, Basic and Inkpad models. 
+Plugin will also run under 2.58 but could not be tested due to device driver issues (if wanting, checkout CLI options for main.py).
+</p>
+<p>*Uses Vendor ID = [0xfffe]</p>
+
+<h2>Support and questions</h2>
+<p>Please visit the Mobilereads thread.</p>
+
+
+<h2>Todo</h2>
+<ul>
+<li>Export highlights: resolve minor sorting issue in 'title and page' mode</li>
+<li>Send to device: add GUI file overview</li>
+<li>Add additional CLI options</li>
+<li>Help wanted:<ul>
+<li>test MacOS</li>
+<li>testing (older) Pocketbook readers other than Lux 5.</li>
+<li>test Calibre 2.58</li>
+<li>test explorer-2 backup</li>
+</ul></ul>
+<hr />
+<h2>Tools</h2>
+<h3>Copy (...) files to device (GUI + CLI)</h3>
+<p>Copies user selected .acsm, .app, .dic/.pbi and font files to the appropiate folder on the connected reader</p>
+<p>Note that .zip support uses a simplified extraction method, which loses file metadata (time stamps) and loads extraction files into memory (one at a time).</p>
+
+<h3>Backup Database(s)</h3>
+<p>Copies explorer-x.db and books.db(s) to the specified directory.</p> 
+<p>The first contains file metadata from the library interface, and reading positions.
+The latter contains annotations, together with (unused) file metadata.</p> 
+
+<h3>Export Highlights</h3>
+For additional exporting features, see the <a href="http://www.mobileread.com/forums/showthread.php?p=2853161">Annotations plugin</a> that can export highlights and notes to Calibre.
+
+<hr />
+<h2>Author(s)</h2>
+<p>Highlight export improves upon script idea by retrography from <a href="https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36">https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36</a></p>
+
+<p>Building (and improving) upon parts from calibre-annotations and calibre-kobotools by DavidFor and griker, and the Calibre Plugin tutorial by Kovid Goyal.
+Without their work this plugin would not be possible.</p>
+
+<p>William Ouwehand 2021+ (mail todo)</p>
+
+</body>
+</html>
