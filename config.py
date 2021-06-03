@@ -20,7 +20,7 @@ logger = logging.getLogger('pbt_logger.config')
 prefs = JSONConfig('plugins/pocketbook_tools')
 
 # Set defaults
-prefs.defaults['up_zipenabled'] = True
+prefs.defaults['up_zipenabled'] = False
 prefs.defaults['up_acsmtocard'] = False
 prefs.defaults['up_alwaysreplace'] = True
 prefs.defaults['up_deletemode'] = 0
@@ -48,8 +48,8 @@ class ConfigWidget(QWidget):
         #self.store_on_connect_checkbox.clicked.connect(self.store_on_connect_checkbox_clicked)
         self.cfg_runtime_options_qup.addWidget(self.up_alwaysreplace)
 
-        self.up_zipenabled = QCheckBox(_('Enable .zip support'))
-        self.up_zipenabled.setToolTip(_('Allow importing files from .zip files. Note that file metadata is lost.'))
+        self.up_zipenabled = QCheckBox(_('Enable importing from .zip files'))
+        self.up_zipenabled.setToolTip(_('Works, but omits file metadata, and does not compare copied files to their original.'))
         self.up_zipenabled.setChecked(prefs['up_zipenabled'])
         # zip .filename requires Python 3.6>
         if calibre_version < (4, 99, 0):

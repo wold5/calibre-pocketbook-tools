@@ -115,7 +115,10 @@ def copyfile(srcpath, destpath):
         logger.exception('Copy failed: %s - %s' % (srcpath, destpath))
         return False
     else:
-        return True
+        if filecmp.cmp(srcpath, destpath, shallow=False):
+            return True
+        else:
+            return False
 
 def copymovefile(srcpath, destpath):
     '''Wrapper for copyfile. Performs copies using an interim *.tmp file.'''
@@ -130,7 +133,10 @@ def copymovefile(srcpath, destpath):
         logger.exception('Move failed: %s - %s' % (dest_tmp, destpath))
         return False
     else:
-        return True
+        if filecmp.cmp(srcpath, destpath, shallow=False):
+            return True
+        else:
+            return False
 
 def copyzipfile(zipparent, zipinfo, destpath):
     '''Extracts a zipfile's bytes directly to a file, forgoing extraction.
@@ -144,8 +150,8 @@ def copyzipfile(zipparent, zipinfo, destpath):
     except:
         logger.exception('Zip extract failed: %s - %s' % (zipinfo, destpath))
         return False
-
-    return True
+    else:
+        return True
 
 def dbbackup(profile, bookdbpath, exportdir, labeltime=False):
     '''Copies db files with labels in name. Labeltime is currently untested.'''
