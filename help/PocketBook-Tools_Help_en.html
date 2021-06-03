@@ -8,23 +8,23 @@
 </head>
 
 <body>
-<h1>Calibre PocketBook Tools helpfile</h1>
+<h1>Calibre PocketBook Tools help</h1>
 <p>Basic plugin offering several tools for (recent) Pocketbook readers.</p>
-<p>When Calibre recognises an USB connected PocketBook reader, the menu options should become available.</p>
+<p>When Calibre recognises an USB connected PocketBook reader, the menu options should become available.<br />
+    It should support most recent HD, Lux, Basic and Inkpad models.</p>
 
 <h2>Requirements</h2>
-<p>Plugin was tested with the 'PocketBook Lux 2' driver with Calibre versions 3.48-5.x, under Linux and Windows 10. It should support most recent HD, Lux, Basic and Inkpad models. 
+<p>Plugin was tested with the 'PocketBook Lux 2' driver with Calibre versions 3.48-5.x, under Linux and Windows 10.
 Plugin will also run under 2.58 but could not be tested due to device driver issues (if wanting, checkout CLI options for main.py).
 </p>
 <p>*Uses Vendor ID = [0xfffe]</p>
 
 <h2>Support and questions</h2>
-<p>Please visit the Mobilereads thread.</p>
+<p>Please visit the future Mobileread thread.</p>
 
 
 <h2>Todo</h2>
 <ul>
-<li>Export highlights: resolve minor sorting issue in 'title and page' mode</li>
 <li>Send to device: add GUI file overview</li>
 <li>Add additional CLI options</li>
 <li>Help wanted:<ul>
@@ -36,23 +36,31 @@ Plugin will also run under 2.58 but could not be tested due to device driver iss
 <hr />
 <h2>Tools</h2>
 <h3>Copy (...) files to device (GUI + CLI)</h3>
-<p>Copies user selected .acsm, .app, .dic/.pbi and font files to the appropiate folder on the connected reader</p>
+<p>Copies user selected .acsm, .app, .dic/.pbi and font files to the appropiate folder on the connected reader.</p>
 <p>Note that .zip support uses a simplified extraction method, which loses file metadata (time stamps) and loads extraction files into memory (one at a time).</p>
 
 <h3>Backup Database(s)</h3>
 <p>Copies explorer-x.db and books.db(s) to the specified directory.</p> 
 <p>The first contains file metadata from the library interface, and reading positions.
 The latter contains annotations, together with (unused) file metadata.</p> 
+<p>Notes: file similarity is checked after copying. <b>Existing backups are (currently) silently overwritten</b>.</p>
 
 <h3>Export Highlights</h3>
-For additional exporting features, see the <a href="http://www.mobileread.com/forums/showthread.php?p=2853161">Annotations plugin</a> that can export highlights and notes to Calibre.
+<p>For additional exporting features, see the <a href="http://www.mobileread.com/forums/showthread.php?p=2853161">Annotations plugin</a> that can export highlights and notes to Calibre.</p>
+
+<h3>Merge/Fix annotations on device</h3>
+<p>After an e-book files changes on the device, it may be treated as a new book in the database.
+    Examples are re-downloading public library e-books, and changing e-book cover and/or metadata.
+    Afterwards, annotations created for the previous file may no longer be shown for the 'new' file.</p>
+<p>This tool searches for such duplicated titles, and modifies any existing annotation entries to point to the (highest) ID representing the 'new' book entry.</p>
+<p><strong>PLEASE backup your books.db file(s) first, for example using the 'Backup database(s)' menu option.</strong></p>
 
 <hr />
 <h2>Author(s)</h2>
-<p>Highlight export improves upon script idea by retrography from <a href="https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36">https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36</a></p>
-
 <p>Building (and improving) upon parts from calibre-annotations and calibre-kobotools by DavidFor and griker, and the Calibre Plugin tutorial by Kovid Goyal.
 Without their work this plugin would not be possible.</p>
+
+<p>Highlight export improves upon script idea by retrography from <a href="https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36">https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36</a></p>
 
 <p>William Ouwehand 2021+ (mail todo)</p>
 

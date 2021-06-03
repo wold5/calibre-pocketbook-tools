@@ -1,4 +1,5 @@
 import os, shutil, filecmp, sqlite3, json, zipfile
+from random import randrange
 
 import logging
 logger = logging.getLogger('pbt_logger.main')
@@ -339,6 +340,58 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
 
     return True
 
+def mergefix_annotations(dbpath):
+    query_dupes = '''
+                    SELECT Title, Authors, OID, itemcount FROM Books
+                    INNER JOIN (SELECT Title, Authors FROM Books GROUP BY Title, Authors HAVING COUNT(*) > 1) using (Title, Authors)
+                    LEFT JOIN (SELECT ParentID, COUNT(*) AS itemcount FROM Items GROUP BY ParentID) on ParentID = Books.OID
+                    ORDER BY Title, Authors, OID DESC
+                    '''
+
+    query_update = '''
+                    UPDATE Items SET ParentID = ? WHERE ParentID = ?
+                    '''
+
+    # Given the early release, we do a backup just to be sure
+    copied = copyfile(dbpath, dbpath + '.backup')
+    logger.debug('Early release DB backup %s' % copied)
+
+    db = dbpath
+    con = sqlite3.connect(db)
+    cursor = con.cursor()
+    cursorupdate = con.cursor()
+
+    report = ''
+    currenttitle = None
+    currentauthor = str(randrange(100000, 1000000))  # author can be Null/None
+    maxoid = None
+    changes = False
+    for title, author, oid, itemcount in cursor.execute(query_dupes):
+        if title != currenttitle and author != currentauthor:
+            if not changes and currenttitle:
+                report += "No changes required for title %s %s.\n" % (currenttitle, currentauthor)
+            changes = False
+            currenttitle = title
+            currentauthor = author
+            maxoid = oid
+            reportline = 'Checking new title %s %s having max oid: %s\n' % (currenttitle, currentauthor, maxoid)
+            report += reportline
+            logging.debug(reportline)
+        elif itemcount:
+            result = cursorupdate.execute(query_update, (maxoid, oid))
+            if result:
+                changes = True
+                reportline = 'For %s, %s changing Item\'s ParentID of %s to %s\n' % (title, author, oid, maxoid)
+                report += reportline
+                logging.debug(reportline)
+
+    reportline = '\nTotal rows changed: %s\n\n' % con.total_changes
+    report += reportline
+    logging.debug(reportline)
+    con.commit()
+    con.close()
+
+    return report
 
 if __name__ == "__main__":
     import argparse

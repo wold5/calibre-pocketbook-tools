@@ -1,7 +1,7 @@
 from calibre.constants import numeric_version as calibre_version
 from calibre.gui2.actions import InterfaceAction
 from calibre.gui2.device import device_signals
-from calibre.gui2 import info_dialog, error_dialog, open_url # FileDialog
+from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url # FileDialog
 
 try:
     from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl)
@@ -23,7 +23,7 @@ from calibre.utils.config import config_dir
 from calibre_plugins.pocketbook_tools.main import \
     getexplorerdb, sqlite_execute_query, profilepath, getprofilepaths, \
     fileuploader, export_htmlhighlights, dbbackup, \
-    copyfile
+    copyfile, mergefix_annotations
 
 # logging
 import logging, logging.config
@@ -153,6 +153,14 @@ class PocketBookToolsPlugin(InterfaceAction):
                                     triggered=self.show_exporthighlights,
         )
         self.pbexporthighlights.setObjectName('pb_exporthighlights')
+
+        self.pbmergefix_annotations = self.create_menu_action(m,
+                                    unique_name='pb_merge_anns',
+                                    text=_('Merge/fix annotations on device') + '…',
+                                    icon=QIcon(I('')),
+                                    triggered=self.show_mergefix_annotations,
+        )
+        self.pbmergefix_annotations.setObjectName('pb_mergefix_annotations')
 
         m.addSeparator()
 
@@ -332,6 +340,43 @@ class PocketBookToolsPlugin(InterfaceAction):
         d = MessageBox(MessageBox.INFO, 'Highlight export finished',
                        text, det_msg=None,
                        show_copy_button=False)
+        d.exec_()
+
+    def show_mergefix_annotations(self):
+        text = 'This tool will modify the device\'s annotation database(s).<br /><br />' \
+               '<b>Please backup the \'books.db\' database(s) first.</b><br /><br />' \
+                'Continue?'
+        d = question_dialog(None, 'Warning',
+                       text, det_msg=None,
+                       show_copy_button=False,
+                       default_yes=False,
+                       override_icon=QIcon(I('dialog_warning.png')))
+        if not d:
+            return
+
+        bookdbs = [self.bookdbs[a] for a, b in enumerate(self.bookdbs_anncount) if b > 0]
+        if not bookdbs:
+            text = 'No annotations found to merge/fix.'
+            report = None
+        else:
+            text = ''
+            report = ''
+
+        for profile, path in bookdbs:
+            titledupes_count = sqlite_execute_query(path,
+                                                    'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books GROUP BY Title, Authors HAVING COUNT(*) > 1)')
+            logger.debug('books.db has %s duplicate title' % titledupes_count)
+            if not titledupes_count:
+                text += 'Nothing found to fix for %s\n.' % db
+                continue
+            else:
+                text += 'Inspected %s.<br />Please check output below.' % path
+                report += 'Start inspecting: %s\n' % path
+                report += mergefix_annotations(path)
+
+        d = MessageBox(MessageBox.INFO, 'Finished merge/fix annotations',
+                       text, det_msg=report,
+                       show_copy_button=True)
         d.exec_()
 
     def show_configuration(self):
