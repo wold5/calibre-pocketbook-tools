@@ -2,4 +2,7 @@ Collection of tools for PocketBook e-readers.
 
 Changelog
 ---------
+0.9.1
+- Added merge/fix annotations tool
+- Minor fixes (title/author sorting, page offset increment, config menu QT issue)
 0.9.0 First release (June 2021)
