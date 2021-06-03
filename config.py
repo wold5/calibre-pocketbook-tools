@@ -13,11 +13,6 @@ import logging
 logger = logging.getLogger('pbt_logger.config')
 # TODO
 
-# This is where all preferences for this plugin will be stored
-# Remember that this name (i.e. plugins/interface_demo) is also
-# in a global namespace, so make it as unique as possible.
-# You should always prefix your config file name with plugins/,
-# so as to ensure you dont accidentally clobber a calibre config file
 prefs = JSONConfig('plugins/pocketbook_tools')
 
 # Set defaults

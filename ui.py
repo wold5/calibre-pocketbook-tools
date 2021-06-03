@@ -132,7 +132,7 @@ class PocketBookToolsPlugin(InterfaceAction):
 
         self.pbupload = self.create_menu_action(m,
                                     unique_name='pb_upload',
-                                    text=_('Send acsm or app/dic/font/... file(s) to device') + '…',
+                                    text=_('Send acsm or app/dic/pbi/font file(s) to device') + '…',
                                     icon=QIcon(I('sync.png')),
                                     triggered=self.show_upload,
         )
@@ -150,7 +150,7 @@ class PocketBookToolsPlugin(InterfaceAction):
                                     unique_name='pb_exporthighlights',
                                     text=_('Export highlights to HTML') + '…',
                                     icon=QIcon(I('save.png')),
-                                    triggered=self.exporthighlights,
+                                    triggered=self.show_exporthighlights,
         )
         self.pbexporthighlights.setObjectName('pb_exporthighlights')
 
@@ -291,7 +291,7 @@ class PocketBookToolsPlugin(InterfaceAction):
                        show_copy_button=True)
         d.exec_()
 
-    def exporthighlights(self):
+    def show_exporthighlights(self):
         logger.debug('Starting...')
 
         # always exclude empty bookdbs

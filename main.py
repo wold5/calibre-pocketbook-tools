@@ -52,7 +52,7 @@ def _pb_filedest(ext):
         '.ttf': ('FONT', 'system/fonts/'),
         '.otf': ('FONT', 'system/fonts/'),
         '.dic': ('DICT', 'system/dictionaries/'),
-        '.pbi': ('DICT', ''),
+        '.pbi': ('INSTALLER', ''),
         '.app': ('APP', 'applications/'),
         '.acsm': ('ACSM', ''),
     }
@@ -344,7 +344,7 @@ if __name__ == "__main__":
     import argparse
 
     # CLI currently supports only fileuploader
-    description = "Uploads font/dict/app/update and .acsm files to a mounted Pocketbook e-reader. If cardpath is provided, .acsm files are copied there."
+    description = "Uploads .acsm or font/dict/pbi/app files to a mounted Pocketbook e-reader. If cardpath is provided, .acsm files are copied there."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--debug', dest='debug', action='store_true', help='Print debug output')
     parser.add_argument('-z', '--zip', dest='zipenabled', action='store_true', help='Enable experimental zip support')
