@@ -303,28 +303,34 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
     cursor = con.cursor()
     # query improves upon https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36
     query = '''
-        SELECT Title, Authors, CAST(substr(Val, instr(Val,'=') + 1, (instr(Val,'&') - instr(Val,'=') - 1)) AS INTEGER) as Page, Val from Books b
+        SELECT Title, Authors, Val,
+        CAST(substr(Val, instr(Val,'page=') + 5, (instr(Val,'&') - instr(Val,'page=') - 5)) AS INTEGER) + 1 AS Page, 
+        CAST(substr(Val, instr(Val,'offs=') + 5, (instr(Val,'#') - instr(Val,'offs=') - 5)) AS INTEGER) + 1 AS PageOffset
+        from Books b
         LEFT JOIN (SELECT OID, ParentID from Items WHERE State = 0) i on i.ParentID = b.OID
         INNER JOIN (SELECT OID, ItemID, Val from Tags where TagID = 104 and Val <> '{"text":"Bookmark"}') t on t.ItemID = i.OID
         '''
 
     if sortontitle:
-        query += '\nORDER BY Title, Authors, Page;'
+        query += '\nORDER BY Title, Authors, Page, PageOffset;'
 
     with open(outputfile, 'wt') as out:
         out.write('<HTML><head><style>td {vertical-align: top;}</style></head><BODY><TABLE>\n')
         out.write("<TR><TH>Title</TH>"
                     "<TH>Authors</TH>"
-                    "<TH>Page</TH>"
                     "<TH>Highlight</TH>"
+                    "<TH>Page</TH>"
                     "</TR>\n")
         for row in cursor.execute(query):
             htmlrow = '<tr>'
             for col, td in enumerate(row):
-                if col < 3:
-                    htmlrow += '<td>%s</td>' % (td)
-                else:
+                if col == 2:
                     htmlrow += '<td>%s</td>' % (json.loads(td)['text'])
+                elif col == 4:
+                    pass
+                else:
+                    htmlrow += '<td>%s</td>' % (td)
+
                     # circumvents missing json1 extension on Windows
             htmlrow += '</tr>\n'
             out.write(htmlrow)
