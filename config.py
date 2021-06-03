@@ -32,7 +32,7 @@ class ConfigWidget(QWidget):
 
     def __init__(self):
         QWidget.__init__(self)
-        self.l = QGridLayout()
+        self.l = QVBoxLayout()
         self.setLayout(self.l)
 
         # Uploader options
@@ -62,13 +62,13 @@ class ConfigWidget(QWidget):
         self.up_acsmtocard.setChecked(prefs['up_acsmtocard'])
         self.cfg_runtime_options_qup.addWidget(self.up_acsmtocard)
 
-        self.horizontalbox = QHBoxLayout(self.cfg_runtime_options_gb)
-        self.horizontalbox.setObjectName('Delete options Hbox')
-        self.cfg_runtime_options_qup.addLayout(self.horizontalbox)
+        self.up_deletemode_hbox = QHBoxLayout()
+        self.up_deletemode_hbox.setObjectName('Delete options Hbox')
+        self.cfg_runtime_options_qup.addLayout(self.up_deletemode_hbox)
 
         self.hl_sortdate_label = QLabel('Delete sourcefile after sending:')
         #self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
-        self.horizontalbox.addWidget(self.hl_sortdate_label)
+        self.up_deletemode_hbox.addWidget(self.hl_sortdate_label)
 
         self.up_deletemode_comboBox = QComboBox(self.cfg_runtime_options_gb)
         self.up_deletemode_comboBox.addItem('Never')
@@ -77,7 +77,7 @@ class ConfigWidget(QWidget):
         self.up_deletemode_comboBox.addItem('All files')
         self.up_deletemode_comboBox.setCurrentIndex(prefs['up_deletemode'])
         self.up_deletemode_comboBox.setItemIcon(3, QIcon(I('dialog_warning.png')))
-        self.horizontalbox.addWidget(self.up_deletemode_comboBox)
+        self.up_deletemode_hbox.addWidget(self.up_deletemode_comboBox)
 
         # General options
         self.cfg_runtime_options_gb = QGroupBox(_('Backup options'))
@@ -97,19 +97,19 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qex = QVBoxLayout(self.cfg_runtime_options_gb)
         self.cfg_runtime_options_qex.setObjectName('Export group Vbox')
 
-        self.horizontalbox = QHBoxLayout(self.cfg_runtime_options_gb)
-        self.horizontalbox.setObjectName('Export options Hbox')
-        self.cfg_runtime_options_qex.addLayout(self.horizontalbox)
+        self.hl_sortdate_hbox = QHBoxLayout()
+        self.hl_sortdate_hbox.setObjectName('Export options Hbox')
+        self.cfg_runtime_options_qex.addLayout(self.hl_sortdate_hbox)
 
         self.hl_sortdate_label = QLabel('Sort exported highlights by:')
         #self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
-        self.horizontalbox.addWidget(self.hl_sortdate_label)
+        self.hl_sortdate_hbox.addWidget(self.hl_sortdate_label)
 
         self.hl_sortdate_comboBox = QComboBox(self.cfg_runtime_options_gb)
         self.hl_sortdate_comboBox.addItem('Annotation date')
         self.hl_sortdate_comboBox.addItem('Title and Page')
         self.hl_sortdate_comboBox.setCurrentIndex(prefs['hl_sortdate'])
-        self.horizontalbox.addWidget(self.hl_sortdate_comboBox)
+        self.hl_sortdate_hbox.addWidget(self.hl_sortdate_comboBox)
 
         # Other options
         self.cfg_runtime_options_gb = QGroupBox(_('Other options'))
