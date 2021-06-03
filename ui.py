@@ -57,7 +57,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         self.resources_path = os.path.join(config_dir, 'plugins', '')
 
         logger.debug('Starting v%d.%d.%d' % self.interface_action_base_plugin.version)
-        logger.debug('prefs: %s' % prefs.__dict__)
+        logger.debug('prefs: %s' % prefs)
 
         self.connected_device=None
         self.mainpath = None

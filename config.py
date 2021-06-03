@@ -11,6 +11,7 @@ except ImportError as e:
 
 import logging
 logger = logging.getLogger('pbt_logger.config')
+# TODO
 
 # This is where all preferences for this plugin will be stored
 # Remember that this name (i.e. plugins/interface_demo) is also
@@ -131,4 +132,4 @@ class ConfigWidget(QWidget):
         prefs['bk_include_emptybookdb'] = self.bk_include_emptybookdb.isChecked()
         prefs['hl_sortdate'] = self.hl_sortdate_comboBox.currentIndex()
         prefs['debug'] = self.gn_debug.isChecked()
-        logger.debug(prefs.__dict__)
+        logger.debug(prefs)
