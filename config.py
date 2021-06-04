@@ -24,8 +24,8 @@ prefs.defaults['bk_include_emptybookdb'] = False
 prefs.defaults['hl_sortdate'] = 0
 prefs.defaults['debug'] = False
 
-class ConfigWidget(QWidget):
 
+class ConfigWidget(QWidget):
     def __init__(self):
         QWidget.__init__(self)
         self.l = QVBoxLayout()
@@ -37,15 +37,15 @@ class ConfigWidget(QWidget):
         self.l.addWidget(self.cfg_runtime_options_gb)
 
         self.up_alwaysreplace = QCheckBox(_('Always replace existing files'))
-        #self.up_alwaysreplace.setObjectName('up_alwaysreplace')
+        # self.up_alwaysreplace.setObjectName('up_alwaysreplace')
         self.up_alwaysreplace.setToolTip(_('Always replace existing files (identical files as ignored)'))
         self.up_alwaysreplace.setChecked(prefs['up_alwaysreplace'])
         self.up_alwaysreplace.setEnabled(False)  # Requires future GUI interaction
-        #self.store_on_connect_checkbox.clicked.connect(self.store_on_connect_checkbox_clicked)
+        # self.store_on_connect_checkbox.clicked.connect(self.store_on_connect_checkbox_clicked)
         self.cfg_runtime_options_qup.addWidget(self.up_alwaysreplace)
 
         self.up_zipenabled = QCheckBox(_('Enable importing from .zip files'))
-        self.up_zipenabled.setToolTip(_('Works, but omits file metadata, and does not compare copied files to their original.'))
+        self.up_zipenabled.setToolTip(_('Omits file metadata, and does not compare copied files to their original.'))
         self.up_zipenabled.setChecked(prefs['up_zipenabled'])
         # zip .filename requires Python 3.6>
         if calibre_version < (4, 99, 0):
@@ -54,7 +54,7 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qup.addWidget(self.up_zipenabled)
 
         self.up_acsmtocard = QCheckBox(_('Try copy .acsm files to SD-card (if available)'))
-        self.up_acsmtocard.setToolTip(_('If an SD-card is present, copy .acsm files there, otherwise copy to main memory'))
+        self.up_acsmtocard.setToolTip(_('If an SD-card is present, copy .acsm files there, otherwise to main memory'))
         self.up_acsmtocard.setChecked(prefs['up_acsmtocard'])
         self.cfg_runtime_options_qup.addWidget(self.up_acsmtocard)
 
@@ -63,14 +63,14 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qup.addLayout(self.up_deletemode_hbox)
 
         self.hl_sortdate_label = QLabel('Delete sourcefile after sending:')
-        #self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
+        # self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
         self.up_deletemode_hbox.addWidget(self.hl_sortdate_label)
 
         self.up_deletemode_comboBox = QComboBox(self.cfg_runtime_options_gb)
         self.up_deletemode_comboBox.addItem('Never')
         self.up_deletemode_comboBox.addItem('Only .acsm files')
         self.up_deletemode_comboBox.addItem('Only .acsm or .zip (parent) files')
-        self.up_deletemode_comboBox.addItem('All files')
+        self.up_deletemode_comboBox.addItem('Any sendable filetype')
         self.up_deletemode_comboBox.setCurrentIndex(prefs['up_deletemode'])
         self.up_deletemode_comboBox.setItemIcon(3, QIcon(I('dialog_warning.png')))
         self.up_deletemode_hbox.addWidget(self.up_deletemode_comboBox)
@@ -88,7 +88,7 @@ class ConfigWidget(QWidget):
         # export options
         self.cfg_runtime_options_gb = QGroupBox(_('Export options'))
         self.cfg_runtime_options_gb.setObjectName('Export options')
-        self.l.addWidget(self.cfg_runtime_options_gb) # add widget
+        self.l.addWidget(self.cfg_runtime_options_gb)  # add widget
 
         self.cfg_runtime_options_qex = QVBoxLayout(self.cfg_runtime_options_gb)
         self.cfg_runtime_options_qex.setObjectName('Export group Vbox')
@@ -98,7 +98,7 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qex.addLayout(self.hl_sortdate_hbox)
 
         self.hl_sortdate_label = QLabel('Sort exported highlights by:')
-        #self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
+        # self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
         self.hl_sortdate_hbox.addWidget(self.hl_sortdate_label)
 
         self.hl_sortdate_comboBox = QComboBox(self.cfg_runtime_options_gb)

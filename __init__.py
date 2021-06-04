@@ -8,13 +8,14 @@ __docformat__ = 'restructuredtext en'
 
 from calibre.customize import InterfaceActionBase
 
+
 class PocketBookToolsPlugin(InterfaceActionBase):
 
     name                = 'Pocketbook Tools'
     description         = 'Tools for Pocketbook e-readers.'
     supported_platforms = ['windows', 'osx', 'linux']
     author              = 'William Ouwehand'
-    version             = (0, 9, 1)
+    version             = (0, 9, 2)
     minimum_calibre_version = (2, 58, 0)
 
     actual_plugin = 'calibre_plugins.pocketbook_tools.ui:PocketBookToolsPlugin'

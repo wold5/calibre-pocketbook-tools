@@ -2,18 +2,20 @@ import os, shutil, filecmp, sqlite3, json, zipfile
 import logging
 logger = logging.getLogger('pbt_logger.main')
 
+
 def getexplorerdb(root):
-    '''Returns location of explorer-x.db, where x is 3 or 2.'''
+    """Returns location of explorer-x.db, where x is 3 or 2."""
     for version in (3, 2):
         explorer = 'explorer-%i' % version
-        path = os.path.join(root, 'system', explorer, explorer + '.db')
-        logger.debug(path)
-        if os.path.exists(path):
-            return path
+        dbpath = os.path.join(root, 'system', explorer, explorer + '.db')
+        logger.debug(dbpath)
+        if os.path.exists(dbpath):
+            return dbpath
     return None
 
+
 def sqlite_execute_query(db, query):
-    '''Returns results for a (simple) sqlite query to provided db path.'''
+    """Returns results for a (simple) sqlite query to provided db path."""
     out = []
     con = sqlite3.connect(db)
     cursor = con.cursor()
@@ -23,30 +25,34 @@ def sqlite_execute_query(db, query):
     logger.debug('%s' % out)
     return out or []
 
+
 def profilepath(root, profile):
+    """Returns a profile name's config path"""
     return os.path.join(root, 'system', 'profiles', profile, 'config')
 
+
 def getprofilepaths(profilenames, mainpath, cardpath=None):
-    ''' Returns existing profile paths. Depends on correctness of explorerdb profiles.'''
+    """ Returns existing profile paths. Depends on correctness of explorerdb profiles."""
     profilepaths = [('defaultroot', os.path.join(mainpath, 'system', 'config'))]  # stock
     for profile in profilenames:
         if not profile.startswith('/'):
-            #for root in (mainpath, cardpath):
+            # for root in (mainpath, cardpath):
             #    profilepaths += profilepath(root, profile)
-            profilepaths += [(profile, profilepath(root, profile)) for root in (mainpath,cardpath) if root]
-    profilepaths = [(profile, dir) for (profile, dir) in profilepaths if os.path.exists(dir)]
+            profilepaths += [(profile, profilepath(root, profile)) for root in (mainpath, cardpath) if root]
+    profilepaths = [(profile, profpath) for (profile, profpath) in profilepaths if os.path.exists(profpath)]
     return profilepaths
 
 
 def _checkfile(srcpath=None):
-    '''Basic checks consisting of file existing and size > 0.'''
+    """Basic checks consisting of file existing and size > 0."""
     if srcpath and os.path.exists(srcpath):
         if os.stat(srcpath).st_size > 0:
             return True
     return False
 
+
 def _pb_filedest(ext):
-    '''Simple file extension identifier, returns filetype label and (relative) destination directory on device.'''
+    """Simple file extension identifier, returns filetype label and (relative) destination directory on device."""
     FORMAT_EXTENSIONS = {
         '.ttf': ('FONT', 'system/fonts/'),
         '.otf': ('FONT', 'system/fonts/'),
@@ -57,8 +63,9 @@ def _pb_filedest(ext):
     }
     return FORMAT_EXTENSIONS.get(ext, (None, None))
 
-class pb_fileref:
-    '''WIP file object class. Contains source, destination and filetype details.'''
+
+class PbFileref:
+    """WIP file object class. Contains source, destination and filetype details."""
     def __init__(self, path, zipinfo):
         if not zipinfo:
             self.srcpath = path
@@ -70,7 +77,7 @@ class pb_fileref:
 
         self.path, self.filename = os.path.split(self.srcpath)
         self.filetype, self.dest_rel = _pb_filedest(os.path.splitext(self.filename)[1])
-        #self.dest_full = None
+        # self.dest_full = None
         self.dest_root = None
         self.dest_filename = self.filename
 
@@ -87,7 +94,7 @@ class pb_fileref:
         self._setdest()
 
     def _setdest(self):
-        if self.dest_root != None and self.dest_rel != None:
+        if self.dest_root is not None and self.dest_rel is not None:
             self.dest_full = os.path.join(self.dest_root, self.dest_rel, self.dest_filename)
         else:
             self.dest_full = None
@@ -107,10 +114,10 @@ class pb_fileref:
 
 
 def copyfile(srcpath, destpath):
-    '''Copy file using shutil.copy. Returns True on success.'''
+    """Copy file using shutil.copy. Returns True on success."""
     try:
         shutil.copy(srcpath, destpath)
-    except: # 'OSERROR':
+    except:  # 'OSERROR':
         logger.exception('Copy failed: %s - %s' % (srcpath, destpath))
         return False
     else:
@@ -119,8 +126,9 @@ def copyfile(srcpath, destpath):
         else:
             return False
 
+
 def copymovefile(srcpath, destpath):
-    '''Wrapper for copyfile. Performs copies using an interim *.tmp file.'''
+    """Wrapper for copyfile. Performs copies using an interim *.tmp file."""
     dest_tmp = destpath + '.tmp'
     result = copyfile(srcpath, dest_tmp)
     if not result:
@@ -137,9 +145,10 @@ def copymovefile(srcpath, destpath):
         else:
             return False
 
+
 def copyzipfile(zipparent, zipinfo, destpath):
-    '''Extracts a zipfile's bytes directly to a file, forgoing extraction.
-    Loses metadata. Mind ram usage with large files (alt: loop block copy in py3.x)'''
+    """Extracts a zipfile's bytes directly to a file, forgoing extraction.
+    Loses metadata. Mind ram usage with large files (alt: loop block copy in py3.x)"""
     with zipfile.ZipFile(zipparent, 'r') as zipf:
         filecontent = zipf.read(zipinfo)
 
@@ -152,8 +161,9 @@ def copyzipfile(zipparent, zipinfo, destpath):
     else:
         return True
 
+
 def dbbackup(profile, bookdbpath, exportdir, labeltime=False):
-    '''Copies db files with labels in name. Labeltime is currently untested.'''
+    """Copies db files with labels in name. Labeltime is currently untested."""
     dbname = os.path.basename(bookdbpath)
 
     if labeltime:
@@ -165,17 +175,17 @@ def dbbackup(profile, bookdbpath, exportdir, labeltime=False):
 
     return copyfile(bookdbpath, dest)
 
+
 def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False, deletemode=0, gui=False):
-    '''Copy supported files to device main or card memory. See pbfile class for supported files.'''
+    """Copy supported files to device main or card memory. See pbfile class for supported files."""
     fileobjs = []
     for filepath in files:
         fileobjs.extend(_uploader_getfileobj(filepath, zipenabled=zipenabled))
 
-    logger.debug('File objects: %s' % (fileobjs))
+    logger.debug('File objects: %s' % fileobjs)
 
     for f in fileobjs:
-        _uploader_setdest(f, mainpath, cardpath=cardpath,
-                            replace=replace, gui=gui)
+        _uploader_setdest(f, mainpath, cardpath=cardpath, replace=replace, gui=gui)
 
     # do future GUI interaction here
     filestodelete = set()
@@ -187,11 +197,13 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
                 copied = copyzipfile(fileobj.zipparent, fileobj.zipinfo, fileobj.dest_full)
 
             if not copied:
-               fileobj.setstate(False, 'Copying or extraction failed')
+                fileobj.setstate(False, 'Copying or extraction failed')
             elif not fileobj.msg:
-                if (deletemode >= 1 and not fileobj.zipparent and fileobj.filetype == 'ACSM') or (deletemode >= 2 and fileobj.zipparent) or deletemode == 3:
+                if (deletemode >= 1 and not fileobj.zipparent and fileobj.filetype == 'ACSM') or\
+                        (deletemode >= 2 and fileobj.zipparent) or deletemode == 3:
                     logger.debug(
-                        'Deleting - deletemode %d, filetype %s, srcpath: %s, zipparent: %s' % (deletemode, fileobj.filetype, fileobj.filename, fileobj.zipparent))
+                        'Deleting - deletemode %d, filetype %s, srcpath: %s, zipparent: %s'
+                        % (deletemode, fileobj.filetype, fileobj.filename, fileobj.zipparent))
                     if fileobj.zipparent:
                         logger.debug('Deleting zipfile %s' % fileobj.zipparent)
                         filestodelete.add(fileobj.zipparent)
@@ -205,21 +217,21 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     for each in filestodelete:
         os.remove(each)
 
-    #[logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
+    # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
     text = '\n'.join([': '.join((x.filename.ljust(40), x.msg)) for x in fileobjs])  #
 
     return text
 
 
 def _cli_prompt_filename(dest, filename):
-    '''CLI user-interaction regarding existing files'''
+    """CLI user-interaction regarding existing files"""
     def _compare_file_ext(a, b):
         return os.path.splitext(a)[1] == os.path.splitext(b)[1]
 
     while True:
         reply = input('Filename %s exists: (R)eplace, Re(N)ame, (S)kip: ' % filename)
         reply = reply.lower()
-        if reply in ('r','n','s'):
+        if reply in ('r', 'n', 's'):
             break
 
     if reply == 's':
@@ -229,22 +241,23 @@ def _cli_prompt_filename(dest, filename):
     elif reply == 'n':
         destparent = os.path.dirname(dest)
         while True:
-            reply = input('? Provide new filename with same extension for \'%s\': ' % (filename))
+            reply = input('? Provide new filename with same extension for \'%s\': ' % filename)
             dest = os.path.join(destparent, reply)
             if reply != filename and _compare_file_ext(reply, filename):
                 print('! Copying %s as %s' % (filename, dest))
                 return reply
             elif reply != '' and os.path.exists(dest):
                 print('! New filename already exists!')
-            #else:
+            # else:
             #    print('! Different filename and/or different extension required')
 
+
 def _uploader_getfileobj(filepath, zipenabled=False):
-    '''Creates fileobj from filepath or zipfile contents (multiple files). Returns list.'''
+    """Creates fileobj from filepath or zipfile contents (multiple files). Returns list."""
     import zipfile
     fileobjs = []
     if not zipfile.is_zipfile(filepath):
-        fileobj = pb_fileref(filepath, None)
+        fileobj = PbFileref(filepath, None)
         if not _checkfile(fileobj.srcpath):
             fileobj.setstate(False, "Skipped, checkfile failed")
         else:
@@ -253,12 +266,13 @@ def _uploader_getfileobj(filepath, zipenabled=False):
         with zipfile.ZipFile(filepath, 'r') as zf:
             zipfiles = [(filepath, zipfile) for zipfile in zf.infolist() if not zipfile.is_dir()]
             for zipfile in zipfiles:
-                fileobjs.append(pb_fileref(*zipfile))
+                fileobjs.append(PbFileref(*zipfile))
         zf.close()
     return fileobjs
 
+
 def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
-    '''Set fileobj destination folder and/or root, and check existence.'''
+    """Set fileobj destination folder and/or root, and check existence."""
     if cardpath and file.filetype == 'ACSM':
         file.setroot(cardpath)
         logger.debug('Copying %s to card' % file.filename)
@@ -273,14 +287,14 @@ def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
             file.setstate(False, 'Skipped, identical file exists')
         else:
             if replace:
-                file.setstate(True, None)#'Replacing existing file')
+                file.setstate(True, None)  # 'Replacing existing file')
             elif not gui:
                 filename = _cli_prompt_filename(file.dest_full, file.filename)
                 if not filename:
                     file.setstate(False, 'Skipped, by user')
                 else:
                     if filename == file.filename:
-                        file.setstate(True, None)# 'Replacing')
+                        file.setstate(True, None)  # 'Replacing')
                     else:
                         file.dest_filename = filename
                         file.setstate(True, 'Copying using new name: %s' % filename)
@@ -293,8 +307,9 @@ def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
     logger.debug('%s: %s - %s' % (file.filename, file.process, file.msg))
     return file
 
+
 def export_htmlhighlights(db, sortontitle=False, outputfile=None):
-    '''Queries a books.db and writes out highlight entries to a HTML file.'''
+    """Queries a books.db and writes out highlight entries to a HTML file."""
     if not outputfile:
         return False
 
@@ -316,10 +331,10 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
     with open(outputfile, 'wt') as out:
         out.write('<HTML><head><style>td {vertical-align: top;}</style></head><BODY><TABLE>\n')
         out.write("<TR><TH>Title</TH>"
-                    "<TH>Authors</TH>"
-                    "<TH>Highlight</TH>"
-                    "<TH>Page</TH>"
-                    "</TR>\n")
+                  "<TH>Authors</TH>"
+                  "<TH>Highlight</TH>"
+                  "<TH>Page</TH>"
+                  "</TR>\n")
         for row in cursor.execute(query):
             htmlrow = '<tr>'
             for col, td in enumerate(row):
@@ -328,7 +343,7 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
                 elif col == 4:
                     pass
                 else:
-                    htmlrow += '<td>%s</td>' % (td)
+                    htmlrow += '<td>%s</td>' % td
 
                     # circumvents missing json1 extension on Windows
             htmlrow += '</tr>\n'
@@ -337,6 +352,7 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
         con.close()
 
     return True
+
 
 def mergefix_annotations(dbpath):
     """Merge/fixes annotations for a given books.db, by modifying Parent_ID values of Item table rows."""
@@ -396,7 +412,8 @@ if __name__ == "__main__":
     import argparse
 
     # CLI currently supports only fileuploader
-    description = "Uploads .acsm or font/dict/pbi/app files to a mounted Pocketbook e-reader. If cardpath is provided, .acsm files are copied there."
+    description = "Uploads .acsm or font/dict/pbi/app files to a mounted Pocketbook e-reader. " \
+                  "If cardpath is provided, .acsm files are copied there."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--debug', dest='debug', action='store_true', help='Print debug output')
     parser.add_argument('-z', '--zip', dest='zipenabled', action='store_true', help='Enable experimental zip support')
@@ -426,10 +443,10 @@ if __name__ == "__main__":
         import zipfile
 
     text = fileuploader(files=args.files,
-                 mainpath=args.mainpath,
-                 cardpath=args.cardpath if args.cardpath else None,
-                 zipenabled=args.zipenabled,
-                 replace=args.replace,
-                 gui=False)
+                        mainpath=args.mainpath,
+                        cardpath=args.cardpath if args.cardpath else None,
+                        zipenabled=args.zipenabled,
+                        replace=args.replace,
+                        gui=False)
 
     print(text)
