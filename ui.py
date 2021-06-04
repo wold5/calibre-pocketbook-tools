@@ -37,7 +37,7 @@ console.setFormatter(
 logger.addHandler(console)
 
 PLUGIN_ICONS = ['images/icon.png']
-
+URLMR = 'https://www.mobileread.com/forums/showthread.php?t=339806'
 
 class PocketBookToolsPlugin(InterfaceAction):
     name = 'PocketBook Tools'
@@ -212,8 +212,8 @@ class PocketBookToolsPlugin(InterfaceAction):
         version = self.interface_action_base_plugin.version
         title = "%s v %d.%d.%d" % (self.name, version[0], version[1], version[2])
         msg = (_('To learn more about this plugin, visit the '
-                 'future plugin thread '
-                 'at MobileRead’s Calibre forum.'))
+                 '<a href="%s">plugin thread</a> '
+                 'at MobileRead’s Calibre forum.') % URLMR)
         about_text = get_resources('about.txt').decode('utf-8')
         d = MessageBox(MessageBox.INFO, title, msg, det_msg=about_text, show_copy_button=False)
         d.exec_()
