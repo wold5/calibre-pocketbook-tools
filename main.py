@@ -1,6 +1,4 @@
 import os, shutil, filecmp, sqlite3, json, zipfile
-from random import randrange
-
 import logging
 logger = logging.getLogger('pbt_logger.main')
 
@@ -341,16 +339,18 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
     return True
 
 def mergefix_annotations(dbpath):
+    """Merge/fixes annotations for a given books.db, by modifying Parent_ID values of Item table rows."""
     query_dupes = '''
-                    SELECT Title, Authors, OID, itemcount FROM Books
-                    INNER JOIN (SELECT Title, Authors FROM Books GROUP BY Title, Authors HAVING COUNT(*) > 1) using (Title, Authors)
-                    LEFT JOIN (SELECT ParentID, COUNT(*) AS itemcount FROM Items GROUP BY ParentID) on ParentID = Books.OID
-                    ORDER BY Title, Authors, OID DESC
+                SELECT * FROM(
+                    SELECT Title, Authors,
+                    COUNT(*) OVER (PARTITION BY Title, Authors) AS COUNTS,
+                    OID,
+                    MAX(OID) OVER (PARTITION BY Title, Authors) AS MAXOID
+                    FROM Books ORDER BY Title, Authors, OID DESC
+                ) WHERE COUNTS > 1
                     '''
 
-    query_update = '''
-                    UPDATE Items SET ParentID = ? WHERE ParentID = ?
-                    '''
+    query_update = "UPDATE Items SET ParentID = ? WHERE ParentID = ?"
 
     # Given the early release, we do a backup just to be sure
     copied = copyfile(dbpath, dbpath + '.backup')
@@ -358,40 +358,39 @@ def mergefix_annotations(dbpath):
 
     db = dbpath
     con = sqlite3.connect(db)
-    cursor = con.cursor()
     cursorupdate = con.cursor()
 
     report = ''
-    currenttitle = None
-    currentauthor = str(randrange(100000, 1000000))  # author can be Null/None
-    maxoid = None
-    changes = False
-    for title, author, oid, itemcount in cursor.execute(query_dupes):
-        if title != currenttitle and author != currentauthor:
-            if not changes and currenttitle:
-                report += "No changes required for title %s %s.\n" % (currenttitle, currentauthor)
-            changes = False
-            currenttitle = title
-            currentauthor = author
-            maxoid = oid
-            reportline = 'Checking new title %s %s having max oid: %s\n' % (currenttitle, currentauthor, maxoid)
-            report += reportline
-            logging.debug(reportline)
-        elif itemcount:
+    reportline = None
+    for title, authors, count, oid, maxoid in con.execute(query_dupes):
+        if count == 1:
+            reportline = None
+        elif oid == maxoid:
+            reportline = 'Checking title \'%s\' by \'%s\' (max oid: %s)' % (title, authors, maxoid)
+        elif oid < maxoid:
             result = cursorupdate.execute(query_update, (maxoid, oid))
-            if result:
-                changes = True
-                reportline = 'For %s, %s changing Item\'s ParentID of %s to %s\n' % (title, author, oid, maxoid)
-                report += reportline
-                logging.debug(reportline)
+            if result.rowcount:
+                reportline = '- Changed %d rows, setting Item\'s ParentID from %s to %s (for \'%s\')'\
+                             % (result.rowcount, oid, maxoid, title)
+            else:
+                reportline = '- Nothing to change for oid %s (\'%s\')' % (oid, title)
+        else:
+            logger.debug("! Unknown issue for %s %s %s %s" % (title, authors, oid, maxoid))
 
-    reportline = '\nTotal rows changed: %s\n\n' % con.total_changes
-    report += reportline
-    logging.debug(reportline)
+        if reportline:
+            report += reportline + '\n'
+            logger.debug(reportline)
+
     con.commit()
+    changedrows = con.total_changes
+    reportline = '\nTotal rows changed: %s\n\n' % changedrows
+    report += reportline
+    logger.debug(reportline)
+
     con.close()
 
-    return report
+    return report, changedrows
+
 
 if __name__ == "__main__":
     import argparse

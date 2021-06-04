@@ -1,7 +1,7 @@
 from calibre.constants import numeric_version as calibre_version
 from calibre.gui2.actions import InterfaceAction
 from calibre.gui2.device import device_signals
-from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url # FileDialog
+from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url
 
 try:
     from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl)
@@ -27,15 +27,17 @@ from calibre_plugins.pocketbook_tools.main import \
 
 # logging
 import logging, logging.config
-#logging.config.fileConfig(load_resources('logging.conf'))
+
+# logging.config.fileConfig(load_resources('logging.conf'))
 logger = logging.getLogger('pbt_logger')
 logger.setLevel(logging.DEBUG if prefs['debug'] else logging.INFO)
 console = logging.StreamHandler()
 console.setFormatter(
-   logging.Formatter('%(levelname)s - %(filename)s:%(lineno)d:%(funcName)s - %(message)s'))  #%(relativeCreated)d
+    logging.Formatter('%(levelname)s - %(filename)s:%(lineno)d:%(funcName)s - %(message)s'))  # %(relativeCreated)d
 logger.addHandler(console)
 
 PLUGIN_ICONS = ['images/icon.png']
+
 
 class PocketBookToolsPlugin(InterfaceAction):
     name = 'PocketBook Tools'
@@ -45,10 +47,10 @@ class PocketBookToolsPlugin(InterfaceAction):
     # shortcut. Remember that currently calibre has no central management for
     # keyboard shortcuts, so try to use an unusual/unused shortcut.
     action_spec = ('PocketBook Tools', None,
-            'PocketBook Tools', None)
+                   'PocketBook Tools', None)
     action_menu_clone_qaction = False
     action_add_menu = False
-    popup_type = 2 #QToolButton.InstantPopup
+    popup_type = 2  # QToolButton.InstantPopup
 
     plugin_device_connection_changed = pyqtSignal(object)
 
@@ -59,7 +61,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         logger.debug('Starting v%d.%d.%d' % self.interface_action_base_plugin.version)
         logger.debug('prefs: %s' % prefs)
 
-        self.connected_device=None
+        self.connected_device = None
         self.mainpath = None
         self.cardpath = None
         self.explorerdbpath = None
@@ -69,7 +71,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         self.qaction.setIcon(get_icons(PLUGIN_ICONS[0]))
         self.menu = QMenu(self.gui)
         self.qaction.setMenu(self.menu)
-        #self.menu.aboutToShow.connect(self.about_to_show_menu)
+        # self.menu.aboutToShow.connect(self.about_to_show_menu)
         self.menu_build()
         self.menu_toggle_deviceactions(present=False)
 
@@ -87,11 +89,13 @@ class PocketBookToolsPlugin(InterfaceAction):
                 if not self.explorerdbpath:
                     logger.critical('Nothing found at explorerdb path. Blocking device functions.')
                     return
-                self.profiles = sqlite_execute_query(self.explorerdbpath, query="SELECT name from profiles") # tested version 37
+                self.profiles = sqlite_execute_query(self.explorerdbpath,
+                                                     query="SELECT name from profiles")  # tested v37
                 self.profilepaths = getprofilepaths(self.profiles, self.mainpath, self.cardpath)
                 # alt: search for books.db. However, if count > 1 complexity becomes similar.
                 self.bookdbs = [(profile, os.path.join(path, 'books.db')) for profile, path in self.profilepaths]
-                self.bookdbs_anncount = [sqlite_execute_query(path, 'SELECT COUNT(*) FROM Tags')[0] for (profile, path) in self.bookdbs]
+                self.bookdbs_anncount = [sqlite_execute_query(path, 'SELECT COUNT(*) FROM Tags')[0] for (profile, path)
+                                         in self.bookdbs]
 
                 self.menu_toggle_deviceactions(True)
                 logger.debug('Explorerpath: %s' % self.explorerdbpath)
@@ -118,48 +122,48 @@ class PocketBookToolsPlugin(InterfaceAction):
     # borrowed from annotations / find duplicates
     def menu_build(self):
         logger.debug('Building menu')
-        #self.menu.clear()
+        # self.menu.clear()
         m = self.menu
 
         # objectnames preceded by pb_ are dis/enabled on connect
 
         self.deviceinfo = self.create_menu_action(m,
-                                     unique_name='nodevice',
-                                     text=_('No PocketBook reader found'),
-                                     icon=None
-                                     )
+                                                  unique_name='nodevice',
+                                                  text=_('No PocketBook reader found'),
+                                                  icon=None
+                                                  )
         self.deviceinfo.setEnabled(False)
 
         self.pbupload = self.create_menu_action(m,
-                                    unique_name='pb_upload',
-                                    text=_('Send acsm or app/dic/pbi/font file(s) to device') + '…',
-                                    icon=QIcon(I('sync.png')),
-                                    triggered=self.show_upload,
-        )
+                                                unique_name='pb_upload',
+                                                text=_('Send acsm or app/dic/pbi/font file(s) to device') + '…',
+                                                icon=QIcon(I('sync.png')),
+                                                triggered=self.show_upload,
+                                                )
         self.pbupload.setObjectName('pb_upload')
 
         self.pbbackup = self.create_menu_action(m,
-                                    unique_name='pb_backup',
-                                    text=_('Backup device database(s)') + '…',
-                                    icon=QIcon(I('save.png')),
-                                    triggered=self.show_backup_annotations,
-        )
+                                                unique_name='pb_backup',
+                                                text=_('Backup device database(s)') + '…',
+                                                icon=QIcon(I('save.png')),
+                                                triggered=self.show_backup_annotations,
+                                                )
         self.pbbackup.setObjectName('pb_backup')
 
         self.pbexporthighlights = self.create_menu_action(m,
-                                    unique_name='pb_exporthighlights',
-                                    text=_('Export highlights to HTML') + '…',
-                                    icon=QIcon(I('save.png')),
-                                    triggered=self.show_exporthighlights,
-        )
+                                                          unique_name='pb_exporthighlights',
+                                                          text=_('Export highlights to HTML') + '…',
+                                                          icon=QIcon(I('save.png')),
+                                                          triggered=self.show_exporthighlights,
+                                                          )
         self.pbexporthighlights.setObjectName('pb_exporthighlights')
 
         self.pbmergefix_annotations = self.create_menu_action(m,
-                                    unique_name='pb_merge_anns',
-                                    text=_('Merge/fix annotations on device') + '…',
-                                    icon=QIcon(I('')),
-                                    triggered=self.show_mergefix_annotations,
-        )
+                                                              unique_name='pb_merge_anns',
+                                                              text=_('Merge/fix annotations on device') + '…',
+                                                              icon=QIcon(I('')),
+                                                              triggered=self.show_mergefix_annotations,
+                                                              )
         self.pbmergefix_annotations.setObjectName('pb_mergefix_annotations')
 
         m.addSeparator()
@@ -186,12 +190,6 @@ class PocketBookToolsPlugin(InterfaceAction):
                                 )
 
     def show_help(self):
-        '''
-        title='Open help page'
-        msg='Weblink'
-        d = MessageBox(MessageBox.INFO, title, msg, det_msg=None, show_copy_button=False)
-        d.exec_()
-        '''
         logger.debug('Starting...')
 
         # borrowed from kobo utilities sans language support
@@ -210,29 +208,20 @@ class PocketBookToolsPlugin(InterfaceAction):
         open_url(QUrl(url))
 
     def show_about(self):
-        '''
-        # The base plugin object defined in __init__.py
-        #base_plugin_object = self.interface_action_base_plugin
-        #do_user_config = base_plugin_object.do_user_config
-        text = get_resources('about.txt')
-        QMessageBox.about(QDialog, 'About the Interface Plugin Demo',
-                          text.decode('utf-8'))
-        '''        
         logger.debug('Starting...')
         version = self.interface_action_base_plugin.version
         title = "%s v %d.%d.%d" % (self.name, version[0], version[1], version[2])
         msg = (_('To learn more about this plugin, visit the '
-               'future plugin thread '
-               'at MobileRead’s Calibre forum.'))
+                 'future plugin thread '
+                 'at MobileRead’s Calibre forum.'))
         about_text = get_resources('about.txt').decode('utf-8')
         d = MessageBox(MessageBox.INFO, title, msg, det_msg=about_text, show_copy_button=False)
         d.exec_()
 
-
     def show_upload(self):
         logger.debug('Starting...')
-        filefilters = [(_("Supported files"), ['ttf','otf','app','pbi','dic','acsm']),]
-        zipenabled = prefs['up_zipenabled'] if calibre_version >= (4,99,0) else False
+        filefilters = [(_("Supported files"), ['ttf', 'otf', 'app', 'pbi', 'dic', 'acsm']), ]
+        zipenabled = prefs['up_zipenabled'] if calibre_version >= (4, 99, 0) else False
         if zipenabled:
             filefilters[0][1].append('zip')
 
@@ -290,7 +279,7 @@ class PocketBookToolsPlugin(InterfaceAction):
             text += '<a href=\'%s\'>%s</a><br /><br />' % (exportdir, exportdir)
             msg = 'Copied:\n'
             for db in copiedfiles:
-                msg += '%s\n' % (db)
+                msg += '%s\n' % db
         else:
             text = 'Nothing exported'
             msg = None
@@ -311,11 +300,11 @@ class PocketBookToolsPlugin(InterfaceAction):
             filefilters = [('HTML', ['html', 'htm'])]
             for profile, path in bookdbs:
                 savefile = choose_save_file(window=self.gui, name='noteexportfiles',
-                                            title='Choose export file for %s books.db file' % (profile),
+                                            title='Choose export file for %s books.db file' % profile,
                                             filters=filefilters,
                                             all_files=False,
                                             initial_path=None,
-                                            initial_filename='pocketbook-highlights_export-%s.html' % (profile)
+                                            initial_filename='pocketbook-highlights_export-%s.html' % profile
                                             )
                 if not savefile:
                     logger.debug('Cancelling this export')
@@ -324,8 +313,8 @@ class PocketBookToolsPlugin(InterfaceAction):
                     savefile += '.html'
 
                 exported = export_htmlhighlights(path,
-                                                sortontitle=prefs['hl_sortdate'],
-                                                outputfile=savefile)
+                                                 sortontitle=prefs['hl_sortdate'],
+                                                 outputfile=savefile)
                 if exported:
                     exportedfiles.append(savefile)
 
@@ -345,12 +334,12 @@ class PocketBookToolsPlugin(InterfaceAction):
     def show_mergefix_annotations(self):
         text = 'This tool will modify the device\'s annotation database(s).<br /><br />' \
                '<b>Please backup the \'books.db\' database(s) first.</b><br /><br />' \
-                'Continue?'
+               'Continue?'
         d = question_dialog(None, 'Warning',
-                       text, det_msg=None,
-                       show_copy_button=False,
-                       default_yes=False,
-                       override_icon=QIcon(I('dialog_warning.png')))
+                            text, det_msg=None,
+                            show_copy_button=False,
+                            default_yes=False,
+                            override_icon=QIcon(I('dialog_warning.png')))
         if not d:
             return
 
@@ -362,17 +351,19 @@ class PocketBookToolsPlugin(InterfaceAction):
             text = ''
             report = ''
 
+        changedrows = 0
         for profile, path in bookdbs:
             titledupes_count = sqlite_execute_query(path,
-                                                    'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books GROUP BY Title, Authors HAVING COUNT(*) > 1)')
+                                                    'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books'
+                                                    ' GROUP BY Title, Authors HAVING COUNT(*) > 1)')
             logger.debug('books.db has %s duplicate title' % titledupes_count)
             if not titledupes_count:
-                text += 'Nothing found to fix for %s\n.' % db
-                continue
+                report += 'Nothing found to fix for %s<br />.' % db
             else:
-                text += 'Inspected %s.<br />Please check output below.' % path
-                report += 'Start inspecting: %s\n' % path
-                report += mergefix_annotations(path)
+                report += 'Starting inspection of \'%s\':\n\n' % path
+                output, changedrows = mergefix_annotations(path)
+                report += output
+                text += '%d rows changed.<br /><br />Please check details below.' % changedrows
 
         d = MessageBox(MessageBox.INFO, 'Finished merge/fix annotations',
                        text, det_msg=report,
@@ -385,10 +376,9 @@ class PocketBookToolsPlugin(InterfaceAction):
 
     def apply_settings(self):
         from calibre_plugins.pocketbook_tools.config import prefs
-        prefs
+        #prefs
 
         if prefs['debug']:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
-
