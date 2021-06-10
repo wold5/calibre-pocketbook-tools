@@ -1,4 +1,5 @@
 import os, shutil, filecmp, sqlite3, json, zipfile
+import time, datetime
 import logging
 logger = logging.getLogger('pbt_logger.main')
 
@@ -149,18 +150,23 @@ def copymovefile(srcpath, destpath):
 def copyzipfile(zipparent, zipinfo, destpath):
     """Extracts a zipfile's bytes directly to a file, forgoing extraction.
     Loses metadata. Mind ram usage with large files (alt: loop block copy in py3.x)"""
+
     with zipfile.ZipFile(zipparent, 'r') as zipf:
         filecontent = zipf.read(zipinfo)
 
-    try:
-        with open(destpath, 'wb') as fout:
-            fout.write(filecontent)
-    except:
-        logger.exception('Zip extract failed: %s - %s' % (zipinfo, destpath))
-        return False
-    else:
-        return True
+    if filecontent:
+        try:
+            with open(destpath, 'wb') as fout:
+                fout.write(filecontent)
+        except:
+            logger.exception('Zip extract failed: %s - %s' % (zipinfo, destpath))
+        else:
+            # fix mod/access time for linux/mac
+            datetime_epoch = time.mktime(zipinfo.date_time + (0, 0, -1))
+            os.utime(destpath, times=(datetime_epoch, datetime_epoch))
+            return True
 
+    return
 
 
 def dbbackup(profile, bookdbpath, exportdir, labeltime=True):
