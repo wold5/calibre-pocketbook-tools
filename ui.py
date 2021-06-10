@@ -8,8 +8,9 @@ try:
 except ImportError as e:
     print('Problem loading QT5: ', e)
     from PyQt4.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl)
+
 try:
-    from calibre.gui2.qt_file_dialogs import choose_dir, choose_files, choose_save_file
+    from calibre.gui2 import choose_dir, choose_files, choose_save_file
 except ImportError:
     # calibre <2.48.
     print('PBT will run, but is untested due to device driver issues. Consider using main.py CLI')
