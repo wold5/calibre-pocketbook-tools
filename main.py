@@ -162,17 +162,13 @@ def copyzipfile(zipparent, zipinfo, destpath):
         return True
 
 
-def dbbackup(profile, bookdbpath, exportdir, labeltime=False):
-    """Copies db files with labels in name. Labeltime is currently untested."""
+
+def dbbackup(profile, bookdbpath, exportdir, labeltime=True):
+    """Copies db files labeled with profile and datetime."""
+    logger.debug('start dbbackup')
     dbname = os.path.basename(bookdbpath)
-
-    if labeltime:
-        time = datetime.now().strftime("%Y-%m-%d-%H:%M") + '-'
-    else:
-        time = ''
-
-    dest = os.path.join(exportdir, profile + '-' + time + dbname)
-
+    time = '-' + datetime.datetime.now().strftime("%Y-%b-%d_%H-%M") if labeltime else '' # avoid colons on windows (streams)
+    dest = os.path.join(exportdir, dbname + '-' + profile + time + '.db')
     return copyfile(bookdbpath, dest)
 
 

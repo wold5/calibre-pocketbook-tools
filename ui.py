@@ -267,10 +267,11 @@ class PocketBookToolsPlugin(InterfaceAction):
             copiedfiles += [self.explorerdbpath]
 
         # backup books.db
-        for profile, bookdb in bookdbs:
-            copied = dbbackup(profile, bookdb, exportdir, labeltime=False)
+        for profile, path in self.bookdbs:
+            logger.debug('Starting backup for: %s' % path)
+            copied = dbbackup(profile, path, exportdir, labeltime=True)
             if copied:
-                copiedfiles += [bookdb]
+                copiedfiles += [path]
 
         logger.debug('copiedfiles: %s' % copiedfiles)
 
