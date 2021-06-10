@@ -310,12 +310,13 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
         return False
 
     con = sqlite3.connect(db)
-    cursor = con.cursor()
+    # con.row_factory = sqlite3.Row
+    # cur = con.cursor()
     # query improves upon https://www.mobileread.com/forums/showpost.php?p=3740634&postcount=36
     query = '''
         SELECT Title, Authors, Val,
-        CAST(substr(Val, instr(Val,'page=') + 5, (instr(Val,'&') - instr(Val,'page=') - 5)) AS INTEGER) + 1 AS Page, 
-        CAST(substr(Val, instr(Val,'offs=') + 5, (instr(Val,'#') - instr(Val,'offs=') - 5)) AS INTEGER) + 1 AS PageOffset
+        CAST(substr(Val, instr(Val,'page=') + 5, (instr(Val,'&') - instr(Val,'page=') - 5)) AS INTEGER) AS Page,
+        CAST(substr(Val, instr(Val,'offs=') + 5, (instr(Val,'#') - instr(Val,'offs=') - 5)) AS INTEGER) AS PageOffset
         from Books b
         LEFT JOIN (SELECT OID, ParentID from Items WHERE State = 0) i on i.ParentID = b.OID
         INNER JOIN (SELECT OID, ItemID, Val from Tags where TagID = 104 and Val <> '{"text":"Bookmark"}') t on t.ItemID = i.OID
@@ -331,23 +332,20 @@ def export_htmlhighlights(db, sortontitle=False, outputfile=None):
                   "<TH>Highlight</TH>"
                   "<TH>Page</TH>"
                   "</TR>\n")
-        for row in cursor.execute(query):
-            htmlrow = '<tr>'
-            for col, td in enumerate(row):
-                if col == 2:
-                    htmlrow += '<td>%s</td>' % (json.loads(td)['text'])
-                elif col == 4:
-                    pass
-                else:
-                    htmlrow += '<td>%s</td>' % td
-
-                    # circumvents missing json1 extension on Windows
-            htmlrow += '</tr>\n'
+        for title, authors, val, page, pageoffset in con.execute(query):
+            valdict = json.loads(val)
+            highlight = valdict.get('text', '').replace('\n', '<br />')  # circumvents missing json1 ext on Windows
+            # notes app edited highlights lose page & offset
+            if 'begin' in valdict:
+                page += 1
+            else:
+                page = '?'
+            htmlrow = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(title, authors or '-', highlight, page)
             out.write(htmlrow)
         out.write('</TABLE></BODY></HTML>')
-        con.close()
 
     return True
+    con.close()
 
 
 def mergefix_annotations(dbpath):
