@@ -259,10 +259,11 @@ class PocketBookToolsPlugin(InterfaceAction):
         if not exportdir:
             return
 
-        # backup explorer
         copiedfiles = []
-        dest = os.path.join(exportdir, os.path.basename(self.explorerdbpath))
-        copied = copyfile(self.explorerdbpath, dest)
+
+        # backup explorer
+        logger.debug('Starting backup for: %s' % self.explorerdbpath)
+        copied = dbbackup('defaultroot', self.explorerdbpath, exportdir, labeltime=True)
         if copied:
             copiedfiles += [self.explorerdbpath]
 

@@ -32,9 +32,13 @@ def profilepath(root, profile):
     return os.path.join(root, 'system', 'profiles', profile, 'config')
 
 
+def profiledefaultrootpath(root):
+    return os.path.join(root, 'system', 'config')
+
+
 def getprofilepaths(profilenames, mainpath, cardpath=None):
     """ Returns existing profile paths. Depends on correctness of explorerdb profiles."""
-    profilepaths = [('defaultroot', os.path.join(mainpath, 'system', 'config'))]  # stock
+    profilepaths = [('defaultroot', profiledefaultrootpath(mainpath))]
     for profile in profilenames:
         if not profile.startswith('/'):
             # for root in (mainpath, cardpath):
@@ -52,8 +56,8 @@ def _checkfile(srcpath=None):
     return False
 
 
-def _pb_filedest(ext):
-    """Simple file extension identifier, returns filetype label and (relative) destination directory on device."""
+def _pb_filedest(path):
+    """ Simple file extension identifier, returns filetype label and (relative) destination directory on device. """
     FORMAT_EXTENSIONS = {
         '.ttf': ('FONT', 'system/fonts/'),
         '.otf': ('FONT', 'system/fonts/'),
@@ -62,7 +66,8 @@ def _pb_filedest(ext):
         '.app': ('APP', 'applications/'),
         '.acsm': ('ACSM', ''),
     }
-    return FORMAT_EXTENSIONS.get(ext, (None, None))
+    filetype, destpath = FORMAT_EXTENSIONS.get(os.path.splitext(path)[1], (None, None))
+    return filetype, os.path.normpath(destpath) if destpath != None else None
 
 
 class PbFileref:
@@ -77,7 +82,7 @@ class PbFileref:
             self.srcpath = zipinfo.filename
 
         self.path, self.filename = os.path.split(self.srcpath)
-        self.filetype, self.dest_rel = _pb_filedest(os.path.splitext(self.filename)[1])
+        self.filetype, self.dest_rel = _pb_filedest(self.filename)
         # self.dest_full = None
         self.dest_root = None
         self.dest_filename = self.filename
@@ -310,10 +315,8 @@ def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
     return file
 
 
-def export_htmlhighlights(db, sortontitle=False, outputfile=None):
+def export_htmlhighlights(db, outputfile, sortontitle=False):
     """Queries a books.db and writes out highlight entries to a HTML file."""
-    if not outputfile:
-        return False
 
     con = sqlite3.connect(db)
     # con.row_factory = sqlite3.Row
@@ -372,16 +375,16 @@ def mergefix_annotations(dbpath):
     copied = copyfile(dbpath, dbpath + '.backup')
     logger.debug('Early release DB backup %s' % copied)
 
-    db = dbpath
-    con = sqlite3.connect(db)
+    con = sqlite3.connect(dbpath)
     cursorupdate = con.cursor()
 
     report = ''
-    reportline = None
     for title, authors, count, oid, maxoid in con.execute(query_dupes):
-        if count == 1:
-            reportline = None
+        reportline = ''
+        if count < 2:
+            continue
         elif oid == maxoid:
+            report += '\n'
             reportline = 'Checking title \'%s\' by \'%s\' (max oid: %s)' % (title, authors, maxoid)
         elif oid < maxoid:
             result = cursorupdate.execute(query_update, (maxoid, oid))
