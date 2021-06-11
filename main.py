@@ -194,6 +194,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
         _uploader_setdest(f, mainpath, cardpath=cardpath, replace=replace, gui=gui)
 
     # do future GUI interaction here
+    copycount = 0
     filestodelete = set()
     for fileobj in fileobjs:
         if fileobj.process:
@@ -202,9 +203,12 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
             else:
                 copied = copyzipfile(fileobj.zipparent, fileobj.zipinfo, fileobj.dest_full)
 
-            if not copied:
+            if copied:
+                copycount += 1
+            else:
                 fileobj.setstate(False, 'Copying or extraction failed')
-            elif not fileobj.msg:
+
+            if not fileobj.msg:
                 if (deletemode >= 1 and not fileobj.zipparent and fileobj.filetype == 'ACSM') or\
                         (deletemode >= 2 and fileobj.zipparent) or deletemode == 3:
                     logger.debug(
@@ -226,7 +230,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
     text = '\n'.join([': '.join((x.filename.ljust(40), x.msg)) for x in fileobjs])  #
 
-    return text
+    return text, copycount if gui else text  # TODO
 
 
 def _cli_prompt_filename(dest, filename):
@@ -333,6 +337,7 @@ def export_htmlhighlights(db, outputfile, sortontitle=False):
     if sortontitle:
         query += '\nORDER BY Title, Authors, Page, PageOffset;'
 
+    highlightcount = 0
     with open(outputfile, 'wt') as out:
         out.write('<HTML><head><style>td {vertical-align: top;}</style></head><BODY><TABLE>\n')
         out.write("<TR><TH>Title</TH>"
@@ -350,10 +355,11 @@ def export_htmlhighlights(db, outputfile, sortontitle=False):
                 page = '?'
             htmlrow = "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(title, authors or '-', highlight, page)
             out.write(htmlrow)
+            highlightcount += 1
         out.write('</TABLE></BODY></HTML>')
 
-    return True
     con.close()
+    return highlightcount
 
 
 def mergefix_annotations(dbpath):

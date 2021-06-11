@@ -210,11 +210,11 @@ class PocketBookToolsPlugin(InterfaceAction):
         logger.debug('Starting...')
         version = self.interface_action_base_plugin.version
         title = "%s v %d.%d.%d" % (self.name, version[0], version[1], version[2])
-        msg = (_('To learn more about this plugin, visit the '
+        text = (_('To learn more about this plugin, visit the '
                  '<a href="%s">plugin thread</a> '
                  'at MobileRead’s Calibre forum.') % URLMR)
-        about_text = get_resources('about.txt').decode('utf-8')
-        d = MessageBox(MessageBox.INFO, title, msg, det_msg=about_text, show_copy_button=False)
+        report = get_resources('about.txt').decode('utf-8')
+        d = MessageBox(MessageBox.INFO, title, text, det_msg=report, show_copy_button=False)
         d.exec_()
 
     def show_upload(self):
@@ -231,7 +231,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         if not files:
             return
 
-        text = fileuploader(files,
+        report, copycount = fileuploader(files,
                             mainpath=self.mainpath,
                             cardpath=self.cardpath if prefs['up_acsmtocard'] else None,
                             zipenabled=zipenabled,
@@ -239,8 +239,8 @@ class PocketBookToolsPlugin(InterfaceAction):
                             deletemode=prefs['up_deletemode'],
                             gui=True)
 
-        d = MessageBox(MessageBox.INFO, "Upload(s) finished", 'Details:',
-                       det_msg=text, show_copy_button=True)
+        d = MessageBox(MessageBox.INFO, "Upload(s) finished", '%d files uploaded (details below):' % copycount,
+                       det_msg=report, show_copy_button=True)
         d.exec_()
 
     def show_backup_annotations(self):
@@ -251,12 +251,15 @@ class PocketBookToolsPlugin(InterfaceAction):
             return
 
         copiedfiles = []
+        notcopiedfiles = []
 
         # backup explorer
         logger.debug('Starting backup for: %s' % self.explorerdbpath)
         copied = dbbackup('defaultroot', self.explorerdbpath, exportdir, labeltime=True)
         if copied:
             copiedfiles += [self.explorerdbpath]
+        else:
+            notcopiedfiles += [self.explorerdbpath]
 
         # backup books.db
         for profile, path in self.bookdbs:
@@ -268,21 +271,26 @@ class PocketBookToolsPlugin(InterfaceAction):
             copied = dbbackup(profile, path, exportdir, labeltime=True)
             if copied:
                 copiedfiles += [path]
+            else:
+                notcopiedfiles += [path]
 
-        logger.debug('copiedfiles: %s' % copiedfiles)
-
-        title = 'Database(s) backup finished'
+        logger.debug('copied files: %s' % (copiedfiles))
+        logger.debug('notcopied files: %s' % (notcopiedfiles))
+        
+        text = 'Nothing exported'
+        report = ''
         if copiedfiles:
-            text = 'Exported database(s) to:<br/>'
+            text = 'Exported %d database(s) to:<br/>' % len(copiedfiles)
             text += '<a href=\'%s\'>%s</a><br /><br />' % (exportdir, exportdir)
-            msg = 'Copied:\n'
             for db in copiedfiles:
-                msg += '%s\n' % db
-        else:
-            text = 'Nothing exported'
-            msg = None
-        d = MessageBox(MessageBox.INFO, title,
-                       text, det_msg=msg,
+                report += 'Copied: %s\n' % db
+            report += '\n\n' if notcopiedfiles else ''
+        if notcopiedfiles:
+            for db in notcopiedfiles:
+                report += 'FAILED: %s\n' % db
+
+        d = MessageBox(MessageBox.INFO, 'Database(s) backup finished',
+                       text, det_msg=report,
                        show_copy_button=True)
         d.exec_()
 
@@ -310,13 +318,18 @@ class PocketBookToolsPlugin(InterfaceAction):
             elif not savefile.lower().endswith(('.html', '.htm')):
                 savefile += '.html'
 
-        logger.debug('exportedfiles: %s' % exportedfiles)
+            logger.debug('Starting export for: %s' % path)
+            highlightcount = export_htmlhighlights(path,
+                                                   outputfile=savefile,
+                                                   sortontitle=prefs['hl_sortdate']
+                                                   )
 
-        if exportedfiles:
-            text = 'Exported highlights to<br/>'
-            for outfile in exportedfiles:
-                text += '<a href=\'%s\'>%s</a><br/>' % (outfile, outfile)
-        else:
+            if highlightcount:
+                exportedfiles.append(savefile)
+                text += '<a href=\'%s\'>%s</a> (%d highlights)<br/>' % (savefile, savefile, highlightcount)
+                logger.debug('exportedfile %s has count %d' % (exportedfiles, highlightcount))
+
+        if not exportedfiles:
             text = 'No annotations exported / to export'
         d = MessageBox(MessageBox.INFO, 'Highlight export finished',
                        text, det_msg=None,
@@ -336,12 +349,12 @@ class PocketBookToolsPlugin(InterfaceAction):
             return
 
         report = ''
+        changedrowsum = 0
         for profile, path in self.bookdbs:
             if not sqlite_execute_query(path,
                                         r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'"):
                 continue
 
-        changedrows = 0
             titledupes_count = sqlite_execute_query(path,
                                                     'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books'
                                                     ' GROUP BY Title, Authors HAVING COUNT(*) > 1)')
@@ -352,7 +365,12 @@ class PocketBookToolsPlugin(InterfaceAction):
                 report += 'Starting inspection of \'%s\':\n\n' % path
                 output, changedrows = mergefix_annotations(path)
                 report += output
-                text += '%d rows changed.<br /><br />Please check details below.' % changedrows
+                changedrowsum += changedrows
+
+        if changedrowsum:
+            text += '%d rows changed.<br /><br />Please check details below.' % changedrowsum
+        else:
+            text = 'No annotations found to merge/fix.'
 
         d = MessageBox(MessageBox.INFO, 'Finished merge/fix annotations',
                        text, det_msg=report,
