@@ -12,7 +12,7 @@ def getexplorerdb(root):
         logger.debug(dbpath)
         if os.path.exists(dbpath):
             return dbpath
-    return None
+    return
 
 
 def sqlite_execute_query(db, query):
@@ -40,19 +40,13 @@ def getprofilepaths(profilenames, mainpath, cardpath=None):
     profilepaths = [('defaultroot', profiledefaultrootpath(mainpath))]
     for profile in profilenames:
         if not profile.startswith('/'):
-            # for root in (mainpath, cardpath):
-            #    profilepaths += profilepath(root, profile)
             profilepaths += [(profile, profilepath(root, profile)) for root in (mainpath, cardpath) if root]
-    profilepaths = [(profile, profpath) for (profile, profpath) in profilepaths if os.path.exists(profpath)]
-    return profilepaths
+    return [(profile, profpath) for (profile, profpath) in profilepaths if os.path.exists(profpath)]
 
 
 def _checkfile(srcpath=None):
-    """Basic checks consisting of file existing and size > 0."""
-    if srcpath and os.path.exists(srcpath):
-        if os.stat(srcpath).st_size > 0:
-            return True
-    return False
+    """Basic check (for CLI) consisting of file existing and size > 0. Returns true/false"""
+    return srcpath and os.path.exists(srcpath) and os.stat(srcpath).st_size > 0
 
 
 def _pb_filedest(path):
@@ -122,33 +116,25 @@ def copyfile(srcpath, destpath):
     """Copy file using shutil.copy. Returns True on success."""
     try:
         shutil.copy(srcpath, destpath)
-    except:  # 'OSERROR':
+    except:
         logger.exception('Copy failed: %s - %s' % (srcpath, destpath))
-        return False
+        return
     else:
-        if filecmp.cmp(srcpath, destpath, shallow=False):
-            return True
-        else:
-            return False
-
+        return filecmp.cmp(srcpath, destpath, shallow=False)
 
 def copymovefile(srcpath, destpath):
     """Wrapper for copyfile. Performs copies using an interim *.tmp file."""
     dest_tmp = destpath + '.tmp'
-    result = copyfile(srcpath, dest_tmp)
-    if not result:
-        return False
+    if not copyfile(srcpath, dest_tmp):
+        return
 
     try:
         shutil.move(dest_tmp, destpath)
     except:
         logger.exception('Move failed: %s - %s' % (dest_tmp, destpath))
-        return False
+        return
     else:
-        if filecmp.cmp(srcpath, destpath, shallow=False):
-            return True
-        else:
-            return False
+        return filecmp.cmp(srcpath, destpath, shallow=False)
 
 
 def copyzipfile(zipparent, zipinfo, destpath):
@@ -256,8 +242,8 @@ def _cli_prompt_filename(dest, filename):
             if reply != filename and _compare_file_ext(reply, filename):
                 print('! Copying %s as %s' % (filename, dest))
                 return reply
-            elif reply != '' and os.path.exists(dest):
-                print('! New filename already exists!')
+            elif reply and os.path.exists(dest):
+                print('! New filename already exists')
             # else:
             #    print('! Different filename and/or different extension required')
 
@@ -274,9 +260,9 @@ def _uploader_getfileobj(filepath, zipenabled=False):
             fileobjs.append(fileobj)
     elif zipenabled:
         with zipfile.ZipFile(filepath, 'r') as zf:
-            zipfiles = [(filepath, zipfile) for zipfile in zf.infolist() if not zipfile.is_dir()]
-            for zipfile in zipfiles:
-                fileobjs.append(PbFileref(*zipfile))
+            for zipfile in zf.infolist():
+                if not zipfile.is_dir():
+                    fileobjs.append(PbFileref(filepath, zipfile))
         zf.close()
     return fileobjs
 
@@ -295,22 +281,20 @@ def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
     if os.path.exists(file.dest_full):
         if not file.zipparent and filecmp.cmp(*file()):
             file.setstate(False, 'Skipped, identical file exists')
-        else:
-            if replace:
-                file.setstate(True, None)  # 'Replacing existing file')
-            elif not gui:
-                filename = _cli_prompt_filename(file.dest_full, file.filename)
-                if not filename:
-                    file.setstate(False, 'Skipped, by user')
-                else:
-                    if filename == file.filename:
-                        file.setstate(True, None)  # 'Replacing')
-                    else:
-                        file.dest_filename = filename
-                        file.setstate(True, 'Copying using new name: %s' % filename)
+        elif replace:
+            file.setstate(True, None)  # 'Replacing existing file')
+        elif not gui:
+            filename = _cli_prompt_filename(file.dest_full, file.filename)
+            if not filename:
+                file.setstate(False, 'Skipped, by user')
+            elif filename == file.filename:
+                file.setstate(True, None)  # 'Replacing')
             else:
-                pass
-                # cannot yet set gui replace (Y/N, change filename)
+                file.dest_filename = filename
+                file.setstate(True, 'Copying using new name: %s' % filename)
+        else:
+            pass
+            # cannot yet set gui replace (Y/N, change filename)
     else:
         file.setstate(True, None)  # Files to copy omit msg.
 
