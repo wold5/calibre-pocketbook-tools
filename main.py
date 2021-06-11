@@ -360,10 +360,6 @@ def mergefix_annotations(dbpath):
 
     query_update = "UPDATE Items SET ParentID = ? WHERE ParentID = ?"
 
-    # Given the early release, we do a backup just to be sure
-    copied = copyfile(dbpath, dbpath + '.backup')
-    logger.debug('Early release DB backup %s' % copied)
-
     con = sqlite3.connect(dbpath)
     cursorupdate = con.cursor()
 
