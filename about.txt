@@ -10,6 +10,7 @@ Changelog
 - fixed: highlight newlines exported as html breaks
 - highlights without page(offset) have page set to '?'
 - mac/linux: zip extraction restores modify/access dates (not creation)
+- windows: fixed opening local file links in dialogs
 
 - moved annotation count into functions (from device connection phase)
 - compacted and simplified code

@@ -281,7 +281,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         report = ''
         if copiedfiles:
             text = 'Exported %d database(s) to:<br/>' % len(copiedfiles)
-            text += '<a href=\'%s\'>%s</a><br /><br />' % (exportdir, exportdir)
+            text += '<a href=\'file:%s\'>%s</a><br /><br />' % (exportdir, exportdir)
             for db in copiedfiles:
                 report += 'Copied: %s\n' % db
             report += '\n\n' if notcopiedfiles else ''
@@ -326,7 +326,7 @@ class PocketBookToolsPlugin(InterfaceAction):
 
             if highlightcount:
                 exportedfiles.append(savefile)
-                text += '<a href=\'%s\'>%s</a> (%d highlights)<br/>' % (savefile, savefile, highlightcount)
+                text += '<a href=\'file:%s\'>%s</a> (%d highlights)<br/>' % (savefile, savefile, highlightcount)
                 logger.debug('exportedfile %s has count %d' % (exportedfiles, highlightcount))
 
         if not exportedfiles:
