@@ -19,12 +19,11 @@ def sqlite_execute_query(db, query):
     """Returns results for a (simple) sqlite query to provided db path."""
     out = []
     con = sqlite3.connect(db)
-    cursor = con.cursor()
-    for row in cursor.execute(query):
+    for row in con.execute(query):
         out += row
     con.close()
     logger.debug('%s' % out)
-    return out or []
+    return out[0] if len(out) == 1 else out
 
 
 def profilepath(root, profile):

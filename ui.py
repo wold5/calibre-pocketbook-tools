@@ -95,12 +95,10 @@ class PocketBookToolsPlugin(InterfaceAction):
                 self.profilepaths = getprofilepaths(self.profiles, self.mainpath, self.cardpath)
                 # alt: search for books.db. However, if count > 1 complexity becomes similar.
                 self.bookdbs = [(profile, os.path.join(path, 'books.db')) for profile, path in self.profilepaths]
-                self.bookdbs_anncount = [sqlite_execute_query(path, 'SELECT COUNT(*) FROM Tags')[0] for (profile, path)
-                                         in self.bookdbs]
 
                 self.menu_toggle_deviceactions(True)
                 logger.debug('Explorerpath: %s' % self.explorerdbpath)
-                logger.debug('Bookdb info: %s, %s' % (self.bookdbs, self.bookdbs_anncount))
+                logger.debug('Bookdb info: %s' % self.bookdbs)
         else:
             logger.debug('No PocketBook connected')
             self.menu_toggle_deviceactions(False)
@@ -248,13 +246,6 @@ class PocketBookToolsPlugin(InterfaceAction):
     def show_backup_annotations(self):
         logger.debug('Starting...')
 
-        if not prefs['bk_include_emptybookdb']:
-            bookdbs = [self.bookdbs[a] for a, b in enumerate(self.bookdbs_anncount) if b > 0]
-        else:
-            bookdbs = self.bookdbs
-
-        logger.debug('Bookdbs: %s' % bookdbs)
-
         exportdir = choose_dir(self.gui, 'backupdir', title='Choose backup directory')
         if not exportdir:
             return
@@ -269,6 +260,10 @@ class PocketBookToolsPlugin(InterfaceAction):
 
         # backup books.db
         for profile, path in self.bookdbs:
+            if not prefs['bk_include_emptybookdb'] and not sqlite_execute_query(
+                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID == 102"):
+                logger.debug('Skipping bookdb backup: %s' % path)
+                continue
             logger.debug('Starting backup for: %s' % path)
             copied = dbbackup(profile, path, exportdir, labeltime=True)
             if copied:
@@ -294,32 +289,26 @@ class PocketBookToolsPlugin(InterfaceAction):
     def show_exporthighlights(self):
         logger.debug('Starting...')
 
-        # always exclude empty bookdbs
-        bookdbs = [self.bookdbs[a] for a, b in enumerate(self.bookdbs_anncount) if b > 0]
-        logger.debug('Bookdbs: %s' % bookdbs)
-
+        text = 'Exported highlights to:<br/>'
         exportedfiles = []
-        if bookdbs:
-            filefilters = [('HTML', ['html', 'htm'])]
-            for profile, path in bookdbs:
-                savefile = choose_save_file(window=self.gui, name='noteexportfiles',
-                                            title='Choose export file for %s books.db file' % profile,
-                                            filters=filefilters,
-                                            all_files=False,
-                                            initial_path=None,
-                                            initial_filename='pocketbook-highlights_export-%s.html' % profile
-                                            )
-                if not savefile:
-                    logger.debug('Cancelling this export')
-                    continue
-                if not savefile.lower().endswith(('.html', '.htm')):
-                    savefile += '.html'
+        filefilters = [('HTML', ['html', 'htm'])]
+        for profile, path in self.bookdbs:
+            if not sqlite_execute_query(
+                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'"):
+                continue
 
-                exported = export_htmlhighlights(path,
-                                                 sortontitle=prefs['hl_sortdate'],
-                                                 outputfile=savefile)
-                if exported:
-                    exportedfiles.append(savefile)
+            savefile = choose_save_file(window=self.gui, name='noteexportfiles',
+                                        title='Choose export file for %s books.db file' % profile,
+                                        filters=filefilters,
+                                        all_files=False,
+                                        initial_path=None,
+                                        initial_filename='pocketbook-highlights_export-%s.html' % profile
+                                        )
+            if not savefile:
+                logger.debug('Cancelling export for %s' % path)
+                continue
+            elif not savefile.lower().endswith(('.html', '.htm')):
+                savefile += '.html'
 
         logger.debug('exportedfiles: %s' % exportedfiles)
 
@@ -346,16 +335,13 @@ class PocketBookToolsPlugin(InterfaceAction):
         if not d:
             return
 
-        bookdbs = [self.bookdbs[a] for a, b in enumerate(self.bookdbs_anncount) if b > 0]
-        if not bookdbs:
-            text = 'No annotations found to merge/fix.'
-            report = None
-        else:
-            text = ''
-            report = ''
+        report = ''
+        for profile, path in self.bookdbs:
+            if not sqlite_execute_query(path,
+                                        r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'"):
+                continue
 
         changedrows = 0
-        for profile, path in bookdbs:
             titledupes_count = sqlite_execute_query(path,
                                                     'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books'
                                                     ' GROUP BY Title, Authors HAVING COUNT(*) > 1)')
