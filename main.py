@@ -88,6 +88,7 @@ class PbFileref:
         self.dest_filename = self.filename
 
     def setroot(self, dest_root, tocard=False):
+        self.tocard = tocard
         self.dest_root = dest_root
         self.process = None
         self.msg = None
