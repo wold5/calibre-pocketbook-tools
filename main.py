@@ -71,6 +71,7 @@ class PbFileref:
         self.zipinfo = zipinfo
 
         self.setfilemeta()
+        self.delete = False
 
     def __setattr__(self, name, value):
         if name == 'dest_filename':
@@ -102,6 +103,10 @@ class PbFileref:
         self.process = process
         self.msg = msg
 
+    def setdeleted(self, wasdeleted):
+        self.wasdeleted = wasdeleted
+        if wasdeleted:
+            self.msg_outcome += ' (deleted source)'
 
     def do_copyfile(self):
         if self.zipinfo:
@@ -187,31 +192,27 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     for f in fileobjs:
         _uploader_setdest(f, mainpath, cardpath=cardpath, replace=replace, gui=gui)
 
+        if (deletemode >= 1 and not f.zipinfo and f.filetype == 'ACSM') or \
+                (deletemode >= 2 and f.zipinfo) or deletemode == 3:
+            f.delete = True
+
     # do future GUI interaction here
     copycount = 0
     filestodelete = set()
     for fileobj in fileobjs:
         if fileobj.process:
             copied = fileobj.do_copyfile()
+            wasdeleted = False
             if copied:
                 copycount += 1
-            else:
-                fileobj.setstate(False, 'Copying or extraction failed')
+                if fileobj.delete:
+                    logger.debug('Deleting %s (if zip of %s)' % (fileobj.srcpath, fileobj.archive_parent))
+                    filestodelete.add(fileobj.srcpath if not fileobj.archive_parent else fileobj.archive_parent)
+                    wasdeleted = True
 
-            if not fileobj.msg:
-                if (deletemode >= 1 and not fileobj.zipparent and fileobj.filetype == 'ACSM') or\
-                        (deletemode >= 2 and fileobj.zipparent) or deletemode == 3:
-                    logger.debug(
-                        'Deleting - deletemode %d, filetype %s, srcpath: %s, zipparent: %s'
-                        % (deletemode, fileobj.filetype, fileobj.filename, fileobj.zipparent))
-                    if fileobj.zipparent:
-                        logger.debug('Deleting zipfile %s' % fileobj.zipparent)
-                        filestodelete.add(fileobj.zipparent)
-                    else:
-                        filestodelete.add(fileobj.srcpath)
-                    fileobj.setstate(True, 'Copied or extracted file (deleted source)')
-                else:
-                    fileobj.setstate(True, 'Copied or extracted file')
+            fileobj.setoutcome(copied, 'Copied or extracted file' if copied else 'Copying or extraction failed', wasdeleted)
+        else:
+            fileobj.setoutcome(False, fileobj.msg, False)
 
     logger.debug('filestodelete: %s' % filestodelete)
     for each in filestodelete:
