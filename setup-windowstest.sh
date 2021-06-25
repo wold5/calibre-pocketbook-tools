@@ -14,4 +14,4 @@ cd $testdir
 git clone --reference ~/workbench/calibre https://github.com/wold5/calibre
 cd /$testdir/calibre/
 git checkout v3.48.0
-cp ~/workbench/calibre/src/calibre/devices/misc.py ./src/calibre/devices/
+cp ~/workbench/calibre/src/calibre/devices/misc.py ./src/calibre/devices/ && echo 'Copied pocketbook driver'
