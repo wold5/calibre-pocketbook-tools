@@ -103,6 +103,11 @@ class PbFileref:
         self.process = process
         self.msg = msg
 
+    def setoutcome(self, tocopy, msg_outcome, wasdeleted=False):
+        self.tocopy = tocopy
+        self.msg_outcome = msg_outcome
+        self.setdeleted(wasdeleted)
+
     def setdeleted(self, wasdeleted):
         self.wasdeleted = wasdeleted
         if wasdeleted:
@@ -219,7 +224,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
         os.remove(each)
 
     # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
-    text = '\n'.join([': '.join((x.filename.ljust(40), x.msg)) for x in fileobjs])  #
+    text = '\n'.join([': '.join((x.filename.ljust(40), x.msg_outcome)) for x in fileobjs])  #
 
     return text, copycount if gui else text  # TODO
 
