@@ -90,8 +90,6 @@ class PbFileref:
     def setroot(self, dest_root, tocard=False):
         self.tocard = tocard
         self.dest_root = dest_root
-        self.process = None
-        self.msg = None
         self._set_dest_full()
 
     def _set_dest_full(self):
@@ -191,7 +189,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     """Copy supported files to device main or card memory. See pbfile class for supported files."""
     fileobjs = []
     for filepath in files:
-        fileobjs.extend(_uploader_getfileobj(filepath, zipenabled=zipenabled))
+        fileobjs += _uploader_getfileobj(filepath, zipenabled=zipenabled)
 
     logger.debug('File objects: %s' % fileobjs)
 
@@ -227,7 +225,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
     text = '\n'.join([': '.join((x.filename.ljust(40), x.msg_outcome)) for x in fileobjs])  #
 
-    return text, copycount if gui else text  # TODO
+    return text, copycount if gui else text
 
 
 def _cli_prompt_filename(dest, filename):
@@ -255,8 +253,6 @@ def _cli_prompt_filename(dest, filename):
                 return reply
             elif reply and os.path.exists(dest):
                 print('! New filename already exists')
-            # else:
-            #    print('! Different filename and/or different extension required')
 
 
 def _uploader_getfileobj(filepath, zipenabled=False):
@@ -279,39 +275,39 @@ def _uploader_getfileobj(filepath, zipenabled=False):
     return fileobjs
 
 
-def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
+def _uploader_setdest(fileobj, mainpath, cardpath=None, replace=False, gui=False):
     """Set fileobj destination folder and/or root, and check existence."""
-    if cardpath and file.filetype == 'ACSM':
-        file.setroot(cardpath)
-        logger.debug('Copying %s to card' % file.filename)
-    elif file.filetype:
-        file.setroot(mainpath)
-    elif not file.filetype:
-        file.setstate(False, 'Skipped, unknown file extension')
-        return file
+    if cardpath and fileobj.filetype == 'ACSM':
+        fileobj.setroot(cardpath, tocard=True)
+        logger.debug('Copying %s to card' % fileobj.filename)
+    elif fileobj.filetype:
+        fileobj.setroot(mainpath, tocard=False)
+    elif not fileobj.filetype:
+        fileobj.setstate(False, 'Skipped, unknown file extension')
+        return fileobj
 
-    if os.path.exists(file.dest_full):
-            file.setstate(False, 'Skipped, identical file exists')
+    if os.path.exists(fileobj.dest_full):
         if not fileobj.zipinfo and filecmp.cmp(*fileobj()):
+            fileobj.setstate(False, 'Skipped, identical file exists')
         elif replace:
-            file.setstate(True, None)  # 'Replacing existing file')
+            fileobj.setstate(True, 'Replacing existing file')
         elif not gui:
-            filename = _cli_prompt_filename(file.dest_full, file.filename)
+            filename = _cli_prompt_filename(fileobj.dest_full, fileobj.filename)
             if not filename:
-                file.setstate(False, 'Skipped, by user')
-            elif filename == file.filename:
-                file.setstate(True, None)  # 'Replacing')
+                fileobj.setstate(False, 'Skipped, by user')
+            elif filename == fileobj.filename:
+                fileobj.setstate(True, 'Replacing existing file')
             else:
-                file.dest_filename = filename
-                file.setstate(True, 'Copying using new name: %s' % filename)
+                fileobj.dest_filename = filename
+                fileobj.setstate(True, 'Copying using new name: %s' % filename)
         else:
             pass
             # cannot yet set gui replace (Y/N, change filename)
     else:
-        file.setstate(True, None)  # Files to copy omit msg.
+        fileobj.setstate(True, None)
 
-    logger.debug('%s: %s - %s' % (file.filename, file.process, file.msg))
-    return file
+    logger.debug('%s: %s - %s' % (fileobj.filename, fileobj.process, fileobj.msg))
+    return fileobj
 
 
 def export_htmlhighlights(db, outputfile, sortontitle=False):
