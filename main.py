@@ -65,34 +65,34 @@ def _pb_filedest(path):
 
 class PbFileref:
     """WIP file object class. Contains source, destination and filetype details."""
-    def __init__(self, path, zipinfo):
-        if not zipinfo:
-            self.srcpath = path
-            self.zipinfo = self.zipparent = None
-        else:
-            self.zipparent = path
-            self.zipinfo = zipinfo
-            self.srcpath = zipinfo.filename
+    def __init__(self, path, archive_parent=None, zipinfo=None):
+        self.srcpath = path
+        self.archive_parent = archive_parent
+        self.zipinfo = zipinfo
 
-        self.path, self.filename = os.path.split(self.srcpath)
+        self.setfilemeta()
+
+    def __setattr__(self, name, value):
+        if name == 'dest_filename':
+            self.__dict__['dest_filename'] = value
+            self._set_dest_full()
+
+        self.__dict__[name] = value
+
+    def setfilemeta(self):
+        self.path, self.filename = os.path.split(self.srcpath) if not self.zipinfo else os.path.split(self.zipinfo.filename)
         self.filetype, self.dest_rel = _pb_filedest(self.filename)
         # self.dest_full = None
         self.dest_root = None
         self.dest_filename = self.filename
 
-    def __setattr__(self, name, value):
-        if name == 'dest_filename':
-            self.__dict__['dest_filename'] = value
-            self._setdest()
-        self.__dict__[name] = value
-
-    def setroot(self, dest_root):
+    def setroot(self, dest_root, tocard=False):
         self.dest_root = dest_root
         self.process = None
         self.msg = None
-        self._setdest()
+        self._set_dest_full()
 
-    def _setdest(self):
+    def _set_dest_full(self):
         if self.dest_root is not None and self.dest_rel is not None:
             self.dest_full = os.path.join(self.dest_root, self.dest_rel, self.dest_filename)
         else:
@@ -101,6 +101,14 @@ class PbFileref:
     def setstate(self, process, msg):
         self.process = process
         self.msg = msg
+
+
+    def do_copyfile(self):
+        if self.zipinfo:
+            copied = copyzipfile(self.archive_parent, self.zipinfo, self.dest_full)
+        else:
+            copied = copymovefile(self.srcpath, self.dest_full)
+        return copied
 
     def __call__(self):
         return self.srcpath, self.dest_full
@@ -137,11 +145,11 @@ def copymovefile(srcpath, destpath):
         return filecmp.cmp(srcpath, destpath, shallow=False)
 
 
-def copyzipfile(zipparent, zipinfo, destpath):
+def copyzipfile(archive_parent, zipinfo, destpath):
     """Extracts a zipfile's bytes directly to a file, forgoing extraction.
     Loses metadata. Mind ram usage with large files (alt: loop block copy in py3.x)"""
 
-    with zipfile.ZipFile(zipparent, 'r') as zipf:
+    with zipfile.ZipFile(archive_parent, 'r') as zipf:
         filecontent = zipf.read(zipinfo)
 
     if filecontent:
@@ -149,7 +157,7 @@ def copyzipfile(zipparent, zipinfo, destpath):
             with open(destpath, 'wb') as fout:
                 fout.write(filecontent)
         except:
-            logger.exception('Zip extract failed: %s - %s' % (zipinfo, destpath))
+            logger.exception('Zip extract failed: %s - %s - %s' % (archive_parent, zipinfo, destpath))
         else:
             # fix mod/access time for linux/mac
             datetime_epoch = time.mktime(zipinfo.date_time + (0, 0, -1))
@@ -184,11 +192,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     filestodelete = set()
     for fileobj in fileobjs:
         if fileobj.process:
-            if not fileobj.zipparent:
-                copied = copymovefile(*fileobj())
-            else:
-                copied = copyzipfile(fileobj.zipparent, fileobj.zipinfo, fileobj.dest_full)
-
+            copied = fileobj.do_copyfile()
             if copied:
                 copycount += 1
             else:
@@ -252,18 +256,19 @@ def _uploader_getfileobj(filepath, zipenabled=False):
     """Creates fileobj from filepath or zipfile contents (multiple files). Returns list."""
     import zipfile
     fileobjs = []
-    if not zipfile.is_zipfile(filepath):
-        fileobj = PbFileref(filepath, None)
-        if not _checkfile(fileobj.srcpath):
-            fileobj.setstate(False, "Skipped, checkfile failed")
+    is_zipfile = zipfile.is_zipfile(filepath) if zipenabled else False
+
+    if not is_zipfile:
+        if _checkfile(filepath):
+            fileobjs.append(PbFileref(filepath))
         else:
-            fileobjs.append(fileobj)
-    elif zipenabled:
+            fileobjs.setstate(False, "Skipped, checkfile failed")
+    elif is_zipfile and zipenabled:
         with zipfile.ZipFile(filepath, 'r') as zf:
-            for zipfile in zf.infolist():
-                if not zipfile.is_dir():
-                    fileobjs.append(PbFileref(filepath, zipfile))
-        zf.close()
+            for zipinfo in zf.infolist():
+                if not zipinfo.is_dir():
+                    fileobjs.append(PbFileref(filepath, archive_parent=filepath, zipinfo=zipinfo))
+
     return fileobjs
 
 
@@ -279,8 +284,8 @@ def _uploader_setdest(file, mainpath, cardpath=None, replace=False, gui=False):
         return file
 
     if os.path.exists(file.dest_full):
-        if not file.zipparent and filecmp.cmp(*file()):
             file.setstate(False, 'Skipped, identical file exists')
+        if not fileobj.zipinfo and filecmp.cmp(*fileobj()):
         elif replace:
             file.setstate(True, None)  # 'Replacing existing file')
         elif not gui:
