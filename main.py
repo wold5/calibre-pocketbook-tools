@@ -60,7 +60,7 @@ def _pb_filedest(path):
         '.acsm': ('ACSM', ''),
     }
     filetype, destpath = FORMAT_EXTENSIONS.get(os.path.splitext(path)[1], (None, None))
-    return filetype, os.path.normpath(destpath) if destpath != None else None
+    return filetype, os.path.normpath(destpath) if destpath else destpath
 
 
 class PbFileref:
