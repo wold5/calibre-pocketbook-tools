@@ -14,8 +14,9 @@
     It should support most recent HD, Lux, Basic and Inkpad models.</p>
 
 <h2>Requirements</h2>
-<p>Plugin was tested with the 'PocketBook Lux 2' driver with Calibre versions 3.48-5.x, under Linux and Windows 10.
-Plugin will run under 2.58 but could not be tested due to device driver issues (if wanting, checkout CLI options for main.py).
+<p>Plugin was tested with the 'PocketBook Lux 2' driver with Calibre versions 3.48-5.x, under Linux and Windows 10. <br />
+Using 3.48 with recent PB e-readers will require adding the Touch Lux 2 driver from src/calibre/devices/misc.py to your local version.<br />
+Plugin will run under 2.58 but could not be tested due to device driver issues (if wanting, checkout the CLI options for main.py).
 </p>
 <p>*Uses Vendor ID = [0xfffe]</p>
 
@@ -27,15 +28,16 @@ Plugin will run under 2.58 but could not be tested due to device driver issues (
 <h2>Tools</h2>
 <h3>Copy (...) files to device (GUI + CLI)</h3>
 <p>Copies user selected .acsm, .app, .dic/.pbi and font (.ttf/.otf) files to the appropiate folder on the connected reader.</p>
-<p><em>.zip support requires Calibre 4.99.x or newer. Note that the simplified extraction method may lose (redundant) file metadata and loads files into memory (one at a time).</em></p>
+<p><em>Note: .zip support requires Calibre 4.99.x or newer. Note that the simplified extraction method may lose (redundant) file metadata.</em></p>
 
 <h3>Backup Database(s)</h3>
 <p>Copies explorer-x.db and books.db(s) to the specified directory, with 'profile' name and date appended.</p>
 <p>The first contains file metadata from the library interface, and reading positions.
 The latter contains annotations and (unused) metadata.</p>
-<p><em>Notes: files are compared after copying.</em></p>
+<p><em>Note: files are compared after copying.</em></p>
 
 <h3>Export Highlights to HTML</h3>
+<p>Sorting options can be set using the configuration panel.</p>
 <p><em>Note: Highlights edited using the device's Notes app, may lose their page location information.</em></p>
 <p>For additional exporting features, see the <a href="http://www.mobileread.com/forums/showthread.php?p=2853161">Annotations plugin</a> that can export highlights and notes to Calibre.</p>
 
@@ -43,10 +45,14 @@ The latter contains annotations and (unused) metadata.</p>
 <p>After an e-book files changes on the device, the 'books.db' annotations database may treat it as a new book.
     Examples are re-downloading public library e-books, and changing e-book cover and/or metadata.
     Afterwards, annotations created for the previous file may no longer be shown for the 'new' file.</p>
-<p>This tool searches for such duplicated titles, and modifies existing annotations so they point to the (highest) ID representing the 'new' book entry.</p>
-<p><strong>PLEASE backup your books.db file(s) first, for example using the 'Backup database(s)' menu option.</strong></p>
+<p>This tool searches for such duplicated titles, and modifies their annotations so they point to the (highest) ID representing the 'newest' book entry.</p>
+<p><strong>PLEASE backup your books.db file(s) first, for example using the 'Backup database(s)' menu option.</strong>
+    The device's database design tends towards adding or duplicating entries instead of modifying them. To avoid excessive duplication however, this tool modifies data in-place.</p>
 
 <hr />
+
+<h3>Known issues</h3>
+- Calibre 5.x on Windows: database export dialog missing location when exporting to a device root (i.e. Z:\).
 
 <h2>Author(s)</h2>
 <p>Building (and improving) upon parts from calibre-annotations and calibre-kobotools by DavidFor and griker, and the Calibre Plugin tutorial by Kovid Goyal.

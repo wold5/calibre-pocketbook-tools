@@ -70,8 +70,9 @@ class PbFileref:
         self.archive_parent = archive_parent
         self.zipinfo = zipinfo
 
+        self.tocard = False
         self.setfilemeta()
-        self.delete = False
+        self.delete = None
 
     def __setattr__(self, name, value):
         if name == 'dest_filename':
@@ -136,6 +137,7 @@ def copyfile(srcpath, destpath):
     except:
         logger.exception('Copy failed: %s - %s' % (srcpath, destpath))
         return
+        # catch shutil.SameFileError? --> 2nd exception, cannot be handled.
     else:
         return filecmp.cmp(srcpath, destpath, shallow=False)
 
@@ -196,9 +198,13 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     for f in fileobjs:
         _uploader_setdest(f, mainpath, cardpath=cardpath, replace=replace, gui=gui)
 
-        if (deletemode >= 1 and not f.zipinfo and f.filetype == 'ACSM') or \
-                (deletemode >= 2 and f.zipinfo) or deletemode == 3:
+        if f.delete == None and (
+                (deletemode >= 1 and not f.zipinfo and f.filetype == 'ACSM') or \
+                (deletemode >= 2 and f.zipinfo) or \
+                deletemode == 3):
             f.delete = True
+        else:
+            f.delete = False
 
     # do future GUI interaction here
     copycount = 0
@@ -217,7 +223,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
 
             fileobj.setoutcome(copied, 'Copied or extracted file' if copied else 'Copying or extraction failed', wasdeleted)
         else:
-            fileobj.setoutcome(False, fileobj.msg, False)
+            fileobj.setoutcome(False, fileobj.msg if fileobj.msg and not fileobj.filetype else 'Not copied', False)
 
     logger.debug('filestodelete: %s' % filestodelete)
     for each in filestodelete:
@@ -289,6 +295,7 @@ def _uploader_setdest(fileobj, mainpath, cardpath=None, replace=False, gui=False
 
     if os.path.exists(fileobj.dest_full):
         if not fileobj.zipinfo and filecmp.cmp(*fileobj()):
+            fileobj.delete = False
             fileobj.setstate(False, 'Skipped, identical file exists')
         elif replace:
             fileobj.setstate(True, 'Replacing existing file')
@@ -446,4 +453,4 @@ if __name__ == "__main__":
                         replace=args.replace,
                         gui=False)
 
-    print(text)
+    print(text[0])

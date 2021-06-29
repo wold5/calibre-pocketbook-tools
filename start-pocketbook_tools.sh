@@ -4,7 +4,7 @@ logdir=/ramdisk/
 zip=pocketbook_tools.zip
 cd ~/workbench/calibre-pocketbook-tools/
 #rm $exportdir/$zip"
-zip -ur $exportdir/$zip *.py *.txt *.png README.md help/ images/ && echo "- $zip created"
+zip -ur $exportdir/$zip *.py *.txt icon.png help/ images/ && echo "- $zip created"
 case "$1" in
         zip) exit 0 ;;
 	ZIP) exit 0 ;;

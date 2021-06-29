@@ -118,7 +118,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         else:
             self.deviceinfo.setText(_('No PocketBook reader found'))
 
-    # borrowed from annotations / find duplicates
+    # after annotations / find duplicates
     def menu_build(self):
         logger.debug('Building menu')
         # self.menu.clear()
@@ -280,8 +280,8 @@ class PocketBookToolsPlugin(InterfaceAction):
         text = 'Nothing exported'
         report = ''
         if copiedfiles:
-            text = 'Exported %d database(s) to:<br/>' % len(copiedfiles)
-            text += '<a href=\'file:%s\'>%s</a><br /><br />' % (exportdir, exportdir)
+            text = 'Exported %d database(s) to:<br />' \
+                   '<a href=\'file:%s\'>%s</a>' % (len(copiedfiles), exportdir, exportdir)
             for db in copiedfiles:
                 report += 'Copied: %s\n' % db
             report += '\n\n' if notcopiedfiles else ''
