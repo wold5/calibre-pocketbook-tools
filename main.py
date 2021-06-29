@@ -204,7 +204,8 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
     copycount = 0
     filestodelete = set()
     for fileobj in fileobjs:
-        if fileobj.process:
+        # logger.debug('paths %s %s' % (fileobj.srcpath, fileobj.dest_full))
+        if fileobj.process and fileobj.srcpath != fileobj.dest_full:  # prevent copy in place
             copied = fileobj.do_copyfile()
             wasdeleted = False
             if copied:
