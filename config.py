@@ -40,8 +40,6 @@ class ConfigWidget(QWidget):
         # self.up_alwaysreplace.setObjectName('up_alwaysreplace')
         self.up_alwaysreplace.setToolTip(_('Always replace existing files (identical files as ignored)'))
         self.up_alwaysreplace.setChecked(prefs['up_alwaysreplace'])
-        self.up_alwaysreplace.setEnabled(False)  # Requires future GUI interaction
-        # self.store_on_connect_checkbox.clicked.connect(self.store_on_connect_checkbox_clicked)
         self.cfg_runtime_options_qup.addWidget(self.up_alwaysreplace)
 
         self.up_zipenabled = QCheckBox(_('Enable importing from .zip files'))

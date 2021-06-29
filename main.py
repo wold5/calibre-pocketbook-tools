@@ -187,8 +187,8 @@ def dbbackup(profile, bookdbpath, exportdir, labeltime=True):
     return copyfile(bookdbpath, dest)
 
 
-def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False, deletemode=0, gui=False):
-    """Copy supported files to device main or card memory. See pbfile class for supported files."""
+def uploader_prep(files, mainpath, cardpath=None, zipenabled=False, replace=False, deletemode=0, gui=False):
+    """Copy supported files to device main or card memory. Creates file objects for uploader. See pbfile class for supported files."""
     fileobjs = []
     for filepath in files:
         fileobjs += _uploader_getfileobj(filepath, zipenabled=zipenabled)
@@ -207,6 +207,11 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
             f.delete = False
 
     # do future GUI interaction here
+    return fileobjs
+
+def uploader_copy(fileobjs, deletemode=0, gui=False):
+    """Copies file objects to device main or card memory. See uploader_prep"""
+    logger.debug('Starting fileuploader2')
     copycount = 0
     filestodelete = set()
     for fileobj in fileobjs:
@@ -230,7 +235,7 @@ def fileuploader(files, mainpath, cardpath=None, zipenabled=False, replace=False
         os.remove(each)
 
     # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
-    text = '\n'.join([': '.join((x.filename.ljust(40), x.msg_outcome)) for x in fileobjs])  #
+    text = '\n'.join([': '.join((x.dest_filename.ljust(40), x.msg_outcome)) for x in fileobjs])
 
     return text, copycount if gui else text
 
@@ -299,6 +304,8 @@ def _uploader_setdest(fileobj, mainpath, cardpath=None, replace=False, gui=False
             fileobj.setstate(False, 'Skipped, identical file exists')
         elif replace:
             fileobj.setstate(True, 'Replacing existing file')
+        elif gui:
+            fileobj.setstate(False, 'Skipped, filename exists')
         elif not gui:
             filename = _cli_prompt_filename(fileobj.dest_full, fileobj.filename)
             if not filename:
@@ -309,8 +316,8 @@ def _uploader_setdest(fileobj, mainpath, cardpath=None, replace=False, gui=False
                 fileobj.dest_filename = filename
                 fileobj.setstate(True, 'Copying using new name: %s' % filename)
         else:
+            logger.debug('Unknown state for file exists (Pass).')
             pass
-            # cannot yet set gui replace (Y/N, change filename)
     else:
         fileobj.setstate(True, None)
 
@@ -446,11 +453,13 @@ if __name__ == "__main__":
     if args.zipenabled:
         import zipfile
 
-    text = fileuploader(files=args.files,
+    fileobjs = uploader_prep(files=args.files,
                         mainpath=args.mainpath,
                         cardpath=args.cardpath if args.cardpath else None,
                         zipenabled=args.zipenabled,
                         replace=args.replace,
+                        #deletemode=prefs['up_deletemode'],
                         gui=False)
 
+    text = uploader_copy(fileobjs, gui=False)
     print(text[0])

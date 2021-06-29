@@ -4,10 +4,12 @@ from calibre.gui2.device import device_signals
 from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url
 
 try:
-    from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl)
+    from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
+                          QHBoxLayout, QTableWidget, QTableWidgetItem)
 except ImportError as e:
     print('Problem loading QT5: ', e)
-    from PyQt4.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl)
+    from PyQt4.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
+                          QHBoxLayout, QTableWidget, QTableWidgetItem)
 
 try:
     from calibre.gui2 import choose_dir, choose_files, choose_save_file
@@ -23,8 +25,9 @@ from calibre_plugins.pocketbook_tools.config import prefs
 from calibre.utils.config import config_dir
 from calibre_plugins.pocketbook_tools.main import \
     getexplorerdb, sqlite_execute_query, profilepath, getprofilepaths, \
-    fileuploader, export_htmlhighlights, dbbackup, \
+    uploader_prep, uploader_copy, export_htmlhighlights, dbbackup, \
     copyfile, mergefix_annotations
+from calibre_plugins.pocketbook_tools.ui_dialogs import uploaderTW
 
 # logging
 import logging, logging.config
@@ -231,7 +234,8 @@ class PocketBookToolsPlugin(InterfaceAction):
         if not files:
             return
 
-        report, copycount = fileuploader(files,
+        # COPY
+        fileobjs = uploader_prep(files,
                             mainpath=self.mainpath,
                             cardpath=self.cardpath if prefs['up_acsmtocard'] else None,
                             zipenabled=zipenabled,
@@ -239,9 +243,126 @@ class PocketBookToolsPlugin(InterfaceAction):
                             deletemode=prefs['up_deletemode'],
                             gui=True)
 
+        t = uploaderTW()
+
+        rows = len(fileobjs)
+        if (rows > 0):
+            t.tableWidget.setRowCount(rows)
+
+        # add objs
+        for row, fileobj in enumerate(fileobjs):
+            cb_copy = QTableWidgetItem(fileobj.filename)
+            cb_card = QTableWidgetItem()
+            cb_delete = QTableWidgetItem()
+            filetype = QTableWidgetItem(fileobj.filetype or '')
+            msg = QTableWidgetItem(fileobj.msg or '')
+
+            # checker.setProperty("fileobj", row)
+            cb_copy.setData(100, row)
+            cb_copy.setData(102, fileobj.filename)
+            cb_card.setData(100, row)
+            cb_delete.setData(100, row)
+            cb_delete.setData(101, fileobj.archive_parent)
+
+            if not fileobj.filetype:
+                cb_copy.setFlags(Qt.ItemIsUserCheckable)
+                cb_delete.setFlags(Qt.ItemIsUserCheckable)
+            else:
+                cb_copy.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
+                cb_delete.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            filetype.setFlags(Qt.ItemIsEnabled)
+            if self.cardpath and fileobj.filetype == "ACSM":
+                cb_card.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            else:
+                cb_card.setFlags(Qt.ItemIsUserCheckable)
+            msg.setFlags(Qt.ItemIsEnabled)
+
+            cb_copy.setCheckState(Qt.Checked if fileobj.process else Qt.Unchecked)
+            cb_card.setCheckState(Qt.Checked if fileobj.tocard else Qt.Unchecked)
+            cb_delete.setCheckState(Qt.Checked if fileobj.process and fileobj.delete and fileobj.filetype else Qt.Unchecked)
+
+            filetype.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            if cb_delete.checkState() == Qt.Checked:
+                cb_delete.setBackground(Qt.red)
+
+            t.tableWidget.setItem(row, 0, cb_copy)
+            t.tableWidget.setItem(row, 1, filetype)
+            t.tableWidget.setItem(row, 2, cb_card)
+            t.tableWidget.setItem(row, 3, msg)
+            t.tableWidget.setItem(row, 4, cb_delete)
+
+        # table settings
+        t.tableWidget.sortByColumn(1, Qt.DescendingOrder)
+        t.tableWidget.setSortingEnabled(True)
+
+        # connections
+        def get_tableitemchecked(item):
+            return True if item.checkState() == Qt.Checked else False
+
+        def cellclicked(item):
+            fileobj_nr = item.data(100)
+            row = item.row()
+            col = item.column()
+            if col == 0:
+                checked = get_tableitemchecked(item)
+                fileobjs[fileobj_nr].process = checked
+                logger.debug("Fileobj.process after: %s" % fileobjs[fileobj_nr].process)
+                if not checked:
+                    t.tableWidget.item(row, 4).setFlags(Qt.ItemIsUserCheckable)
+                else:
+                    t.tableWidget.item(row, 4).setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            elif col == 2:
+                checked = get_tableitemchecked(item)
+                fileobjs[fileobj_nr].setroot(self.cardpath if checked else self.mainpath,
+                                             tocard=checked)
+                logger.debug("Fileobj.dest_full after: %s" % fileobjs[fileobj_nr].dest_full)
+            elif col == 4:
+                checked = get_tableitemchecked(item)
+                fileobjs[fileobj_nr].delete = checked
+                logger.debug('fileobj delete? %s' % fileobjs[fileobj_nr].delete)
+
+                archive_parent = item.data(101)
+                if not archive_parent:
+                    fileobjs[fileobj_nr].delete = checked
+                else:
+                    logger.debug('toggling delete for archive items of: %s' % archive_parent)
+                    # should use model/index, but works for now
+                    for nrow in range(t.tableWidget.rowCount()):
+                        item2 = t.tableWidget.item(nrow, col)
+                        if item2.data(101) == archive_parent:
+                            # t.tableWidget.item(nrow, col).setCheckState(Qt.Checked if checked else Qt.Unchecked)
+                            item2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+                            fileobjs[item2.data(100)].delete = checked
+
+        def cellchanged(item):
+            if item.data(102):
+                infocell = t.tableWidget.item(item.row(), 3)
+                if item.text() != item.data(102):
+                    # extension check...
+                    item.setBackground(Qt.yellow)
+                    infocell.setBackground(Qt.yellow)
+                    infocell.setText('Filename (was) changed (user)')
+                    fileobjs[item.data(100)].dest_filename = item.text()
+                    logger.debug('Renamed dest_full: %s' % fileobjs[item.data(100)].dest_full)
+                else:
+                    item.setBackground(Qt.white)
+                    infocell.setBackground(Qt.white)
+
+        t.tableWidget.itemClicked.connect(cellclicked)
+        t.tableWidget.itemChanged.connect(cellchanged)
+
+        temp = t.exec_()
+
+        if temp:
+            report, copycount = uploader_copy(fileobjs,
+                                gui=True)
+        else:
+            return
+
         d = MessageBox(MessageBox.INFO, "Upload(s) finished", '%d files uploaded (details below):' % copycount,
                        det_msg=report, show_copy_button=True)
         d.exec_()
+
 
     def show_backup_annotations(self):
         logger.debug('Starting...')
