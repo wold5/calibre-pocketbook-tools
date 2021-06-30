@@ -494,12 +494,12 @@ class PocketBookToolsPlugin(InterfaceAction):
                 changedrowsum += changedrows
 
         if changedrowsum:
-            text += '%d rows changed.<br /><br />Please check details below.' % changedrowsum
+            text2 += '%d rows changed.<br /><br />Please check details below.' % changedrowsum
         else:
-            text = 'No annotations found to merge/fix.'
+            text2 = 'No annotations found to merge/fix.'
 
         d = MessageBox(MessageBox.INFO, 'Finished merge/fix annotations',
-                       text, det_msg=report,
+                       text2, det_msg=report,
                        show_copy_button=True)
         d.exec_()
 
