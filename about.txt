@@ -2,7 +2,13 @@ Collection of tools for PocketBook e-readers.
 
 Changelog
 ---------
-0.9.3
+0.9.4 | 2021 June, 30
+- added uploader GUI
+- Prevent copy to/from same location
+- Fixed minor filepath issue, and merge/fix dialog text
+- reworked zip and delete related code
+
+0.9.3 | 2021 June, 11th
 - dialogs provide more feedback on number of backup/highlights/uploads, etc
 - db backup adds date/time to backup filenames
 - fixed: calibre 5 uses correct OS file dialogs
@@ -16,12 +22,12 @@ Changelog
 - compacted and simplified code
 - minor changes/fixes
 
-0.9.2
+0.9.2 | 2021 June 6th, First MR release
 - Simplified merge/fix annotations tool
 - Minor changes (plugin name, PEP style)
 
-0.9.1
+0.9.1 | 2021 June
 - Added merge/fix annotations tool
 - Minor fixes (title/author sorting, page offset increment, config menu QT issue)
 
-0.9.0 First release (June 2021)
+0.9.0 First version

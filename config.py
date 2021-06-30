@@ -16,7 +16,7 @@ logger = logging.getLogger('pbt_logger.config')
 prefs = JSONConfig('plugins/pocketbook_tools')
 
 # Set defaults
-prefs.defaults['up_zipenabled'] = False
+prefs.defaults['up_zipenabled'] = True
 prefs.defaults['up_acsmtocard'] = False
 prefs.defaults['up_alwaysreplace'] = True
 prefs.defaults['up_deletemode'] = 0
