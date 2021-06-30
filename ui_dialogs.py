@@ -14,7 +14,7 @@ class uploaderTW(QDialog):
         self.setLayout(self.layout)
         self.setWindowTitle(_('Upload files to device'))
         self.resize(790, 400)
-        self.label = QLabel("Select files to upload. Filenames may be modified first.")
+        self.label = QLabel("Check files to be send. Filenames can be modified.")
         self.layout.addWidget(self.label)
         self.tableWidget = QTableWidget()
         self.tableWidget.setObjectName(u"uploaderTW")
@@ -23,7 +23,7 @@ class uploaderTW(QDialog):
         self.tableWidget.setMinimumWidth(300)
         self.tableWidget.setColumnCount(5)
         self.tableWidget.setHorizontalHeaderLabels(('Copy file?', 'Type', 'Card?', 'Info', 'Delete?')) # , 'rowid', 'archive_parent'
-        for col, width in enumerate((250, 90, 60, 280, 60)):
+        for col, width in enumerate((285, 90, 50, 240, 55)):
             self.tableWidget.setColumnWidth(col, width)
         self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.setSelectionMode(QAbstractItemView.NoSelection)

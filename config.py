@@ -36,14 +36,14 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qup = QVBoxLayout(self.cfg_runtime_options_gb)
         self.l.addWidget(self.cfg_runtime_options_gb)
 
-        self.up_alwaysreplace = QCheckBox(_('Always replace existing files'))
+        self.up_alwaysreplace = QCheckBox(_('Always replace existing files (if different)'))
         # self.up_alwaysreplace.setObjectName('up_alwaysreplace')
-        self.up_alwaysreplace.setToolTip(_('Always replace existing files (identical files as ignored)'))
+        self.up_alwaysreplace.setToolTip(_('Always mark existing files for copying, unless they are identical.'))
         self.up_alwaysreplace.setChecked(prefs['up_alwaysreplace'])
         self.cfg_runtime_options_qup.addWidget(self.up_alwaysreplace)
 
         self.up_zipenabled = QCheckBox(_('Enable importing from .zip files'))
-        self.up_zipenabled.setToolTip(_('Omits file metadata, and does not compare copied files to their original.'))
+        self.up_zipenabled.setToolTip(_('Omits file metadata (date) on Windows.'))
         self.up_zipenabled.setChecked(prefs['up_zipenabled'])
         # zip .filename requires Python 3.6>
         if calibre_version < (4, 99, 0):
@@ -52,7 +52,7 @@ class ConfigWidget(QWidget):
         self.cfg_runtime_options_qup.addWidget(self.up_zipenabled)
 
         self.up_acsmtocard = QCheckBox(_('Try copy .acsm files to SD-card (if available)'))
-        self.up_acsmtocard.setToolTip(_('If an SD-card is present, copy .acsm files there, otherwise to main memory'))
+        self.up_acsmtocard.setToolTip(_('If an SD-card is present, copy .acsm files there, otherwise to main memory.'))
         self.up_acsmtocard.setChecked(prefs['up_acsmtocard'])
         self.cfg_runtime_options_qup.addWidget(self.up_acsmtocard)
 
@@ -60,7 +60,7 @@ class ConfigWidget(QWidget):
         self.up_deletemode_hbox.setObjectName('Delete options Hbox')
         self.cfg_runtime_options_qup.addLayout(self.up_deletemode_hbox)
 
-        self.hl_sortdate_label = QLabel('Delete sourcefile after sending:')
+        self.hl_sortdate_label = QLabel('Mark source file for deletion:')
         # self.cfg_runtime_options_qex.addWidget(self.hl_sortdate_label)
         self.up_deletemode_hbox.addWidget(self.hl_sortdate_label)
 

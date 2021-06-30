@@ -5,11 +5,11 @@ from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url
 
 try:
     from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
-                          QHBoxLayout, QTableWidget, QTableWidgetItem)
+                          QColor, QHBoxLayout, QTableWidget, QTableWidgetItem)
 except ImportError as e:
     print('Problem loading QT5: ', e)
     from PyQt4.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
-                          QHBoxLayout, QTableWidget, QTableWidgetItem)
+                          QColor, QHBoxLayout, QTableWidget, QTableWidgetItem)
 
 try:
     from calibre.gui2 import choose_dir, choose_files, choose_save_file
@@ -253,7 +253,7 @@ class PocketBookToolsPlugin(InterfaceAction):
         for row, fileobj in enumerate(fileobjs):
             cb_copy = QTableWidgetItem(fileobj.filename)
             cb_card = QTableWidgetItem()
-            cb_delete = QTableWidgetItem()
+            cb_delete = QTableWidgetItem("ZIP" if fileobj.archive_parent else None)
             filetype = QTableWidgetItem(fileobj.filetype or '')
             msg = QTableWidgetItem(fileobj.msg or '')
 
@@ -264,17 +264,22 @@ class PocketBookToolsPlugin(InterfaceAction):
             cb_delete.setData(100, row)
             cb_delete.setData(101, fileobj.archive_parent)
 
-            if not fileobj.filetype:
-                cb_copy.setFlags(Qt.ItemIsUserCheckable)
-                cb_delete.setFlags(Qt.ItemIsUserCheckable)
-            else:
+            if fileobj.filetype:
                 cb_copy.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsEditable)
+            else:
+                cb_copy.setFlags(Qt.ItemIsUserCheckable)
+
+            if fileobj.process:
                 cb_delete.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-            filetype.setFlags(Qt.ItemIsEnabled)
+            else:
+                cb_delete.setFlags(Qt.ItemIsUserCheckable)
+
             if self.cardpath and fileobj.filetype == "ACSM":
                 cb_card.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
             else:
                 cb_card.setFlags(Qt.ItemIsUserCheckable)
+
+            filetype.setFlags(Qt.ItemIsEnabled)
             msg.setFlags(Qt.ItemIsEnabled)
 
             cb_copy.setCheckState(Qt.Checked if fileobj.process else Qt.Unchecked)
@@ -283,7 +288,7 @@ class PocketBookToolsPlugin(InterfaceAction):
 
             filetype.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
             if cb_delete.checkState() == Qt.Checked:
-                cb_delete.setBackground(Qt.red)
+                cb_delete.setBackground(QColor('orange'))
 
             t.tableWidget.setItem(row, 0, cb_copy)
             t.tableWidget.setItem(row, 1, filetype)

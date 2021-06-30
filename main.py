@@ -226,16 +226,19 @@ def uploader_copy(fileobjs, deletemode=0, gui=False):
                     filestodelete.add(fileobj.srcpath if not fileobj.archive_parent else fileobj.archive_parent)
                     wasdeleted = True
 
-            fileobj.setoutcome(copied, 'Copied or extracted file' if copied else 'Copying or extraction failed', wasdeleted)
+            fileobj.setoutcome(copied, 'Copied' if copied else 'Copying or extraction failed', wasdeleted)
         else:
-            fileobj.setoutcome(False, fileobj.msg if fileobj.msg and not fileobj.filetype else 'Not copied', False)
+            fileobj.setoutcome(False, fileobj.msg if fileobj.msg and not fileobj.filetype else 'Not copied (user or identical file)', False)
 
     logger.debug('filestodelete: %s' % filestodelete)
     for each in filestodelete:
         os.remove(each)
 
     # [logger.debug('CHECK %s %s' % (x.filename, x.msg)) for x in fileobjs]
-    text = '\n'.join([': '.join((x.dest_filename.ljust(40), x.msg_outcome)) for x in fileobjs])
+    text = ''
+    for x in fileobjs:
+        prefix, spacing = ('', 40) if x.tocopy else ('! ', 38)
+        text += prefix + ' -- '.join((x.dest_filename if gui else x.dest_filename.ljust(spacing), x.msg_outcome)) + '\n'
 
     return text, copycount if gui else text
 
