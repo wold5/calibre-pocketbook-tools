@@ -95,6 +95,8 @@ class PocketBookToolsPlugin(InterfaceAction):
                     return
                 self.profiles = sqlite_execute_query(self.explorerdbpath,
                                                      query="SELECT name from profiles")  # tested v37
+                if not isinstance(self.profiles, list):
+                    self.profiles = [self.profiles]
                 self.profilepaths = getprofilepaths(self.profiles, self.mainpath, self.cardpath)
                 # alt: search for books.db. However, if count > 1 complexity becomes similar.
                 self.bookdbs = [(profile, os.path.join(path, 'books.db')) for profile, path in self.profilepaths]
