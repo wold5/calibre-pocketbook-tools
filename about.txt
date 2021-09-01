@@ -2,7 +2,11 @@ Collection of tools for PocketBook e-readers.
 
 Changelog
 ---------
-0.9.4 | 2021 June, 30
+0.9.5 | 2021 Sep, 1th
+- Fixed to work with a single profile (thanks to romainsc @github)
+- Fixed dialogtext for Merge/fix annotations
+
+0.9.4 | 2021 June, 30th
 - added uploader GUI
 - Prevent copy to/from same location
 - Fixed minor filepath issue, and merge/fix dialog text

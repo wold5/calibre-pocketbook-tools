@@ -389,8 +389,8 @@ class PocketBookToolsPlugin(InterfaceAction):
 
         # backup books.db
         for profile, path in self.bookdbs:
-            if not prefs['bk_include_emptybookdb'] and not sqlite_execute_query(
-                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID == 102"):
+            if not prefs['bk_include_emptybookdb'] and sqlite_execute_query(
+                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID == 102")[0] < 1:
                 logger.debug('Skipping bookdb backup: %s' % path)
                 continue
             logger.debug('Starting backup for: %s' % path)
@@ -427,8 +427,8 @@ class PocketBookToolsPlugin(InterfaceAction):
         exportedfiles = []
         filefilters = [('HTML', ['html', 'htm'])]
         for profile, path in self.bookdbs:
-            if not sqlite_execute_query(
-                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'"):
+            if sqlite_execute_query(
+                    path, r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'")[0] < 1:
                 continue
 
             savefile = choose_save_file(window=self.gui, name='noteexportfiles',
@@ -477,13 +477,13 @@ class PocketBookToolsPlugin(InterfaceAction):
         report = ''
         changedrowsum = 0
         for profile, path in self.bookdbs:
-            if not sqlite_execute_query(path,
-                                        r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'"):
+            if sqlite_execute_query(path,
+                                        r"SELECT COUNT(*) FROM Tags WHERE TagID = 102 and Val <> 'bookmark'")[0] < 1:
                 continue
 
             titledupes_count = sqlite_execute_query(path,
                                                     'SELECT COUNT(*) as title_dupes FROM (SELECT OID FROM Books'
-                                                    ' GROUP BY Title, Authors HAVING COUNT(*) > 1)')
+                                                    ' GROUP BY Title, Authors HAVING COUNT(*) > 1)')[0]
             logger.debug('books.db has %s duplicate title' % titledupes_count)
             if not titledupes_count:
                 report += 'Nothing found to fix for %s<br />.' % db

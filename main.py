@@ -22,8 +22,8 @@ def sqlite_execute_query(db, query):
     for row in con.execute(query):
         out += row
     con.close()
-    logger.debug('%s' % out)
-    return out[0] if len(out) == 1 else out
+    logger.debug(out)
+    return out
 
 
 def profilepath(root, profile):
