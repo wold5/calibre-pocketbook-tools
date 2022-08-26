@@ -4,12 +4,11 @@ from calibre.gui2.device import device_signals
 from calibre.gui2 import info_dialog, error_dialog, question_dialog, open_url
 
 try:
-    from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
+    from PyQt5.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegularExpression, QUrl,
                           QColor, QHBoxLayout, QTableWidget, QTableWidgetItem)
 except ImportError as e:
     print('Problem loading QT5: ', e)
-    from PyQt4.Qt import (Qt, QApplication, pyqtSignal, QIcon, QMenu, QAction, QRegExp, QUrl,
-                          QColor, QHBoxLayout, QTableWidget, QTableWidgetItem)
+
 
 try:
     from calibre.gui2 import choose_dir, choose_files, choose_save_file
@@ -112,7 +111,7 @@ class PocketBookToolsPlugin(InterfaceAction):
             self.explorerdbpath = None
 
     def menu_toggle_deviceactions(self, present=False):
-        actions = self.menu.findChildren(QAction, QRegExp('pb_.*'))
+        actions = self.menu.findChildren(QAction, QRegularExpression('pb_.*'))
         for action in actions:
             action.setEnabled(present)
 
