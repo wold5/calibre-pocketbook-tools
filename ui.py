@@ -36,7 +36,7 @@ logger = logging.getLogger('pbt_logger')
 logger.setLevel(logging.DEBUG if prefs['debug'] else logging.INFO)
 console = logging.StreamHandler()
 console.setFormatter(
-    logging.Formatter('%(levelname)s - %(filename)s:%(lineno)d:%(funcName)s - %(message)s'))  # %(relativeCreated)d
+    logging.Formatter('%(asctime)s: %(levelname)s - %(filename)s:%(lineno)d:%(funcName)s - %(message)s'))  # %(relativeCreated)d
 logger.addHandler(console)
 
 PLUGIN_ICONS = ['images/icon.png']
