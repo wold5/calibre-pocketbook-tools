@@ -2,6 +2,9 @@ Collection of tools for PocketBook e-readers.
 
 Changelog
 ---------
+0.9.6 | 2022 Aug, 26th
+- Quickfix for Calibre 6.x due to Qt6 migration
+
 0.9.5 | 2021 Sep, 1th
 - Fixed to work with a single profile (thanks to romainsc @github)
 - Fixed dialogtext for Merge/fix annotations
