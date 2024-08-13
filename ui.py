@@ -83,7 +83,10 @@ class PocketBookToolsPlugin(InterfaceAction):
         self.plugin_device_connection_changed.emit(is_connected)
         if is_connected:
             self.connected_device = self.gui.device_manager.device
-            if getattr(self.connected_device, 'VENDOR_ID', 0) == [0xfffe]:
+            VID = getattr(self.connected_device, 'VENDOR_ID', 0)
+            # For MacOS, the VID seems to stick to the first reported one, Google VID 0x18d1.
+            # 0x1d6b is for the Color 3, and is also the Linux Foundation VID
+            if VID in [[0xfffe], [0x18d1], [0x1d6b]]:
                 logger.debug('Found PocketBook: %s' % self.connected_device)
                 self.mainpath = getattr(self.connected_device, '_main_prefix', None)
                 self.cardpath = self.connected_device.card_prefix()[0]
